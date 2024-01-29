@@ -1,0 +1,46 @@
+const express = require("express");
+
+const {
+  createProduct,
+  allProduct,
+  singleProduct,
+  updateProducts,
+  deleteProducts,
+  productbyCategory,
+  productbysubCategory,
+  updateType,
+  createWishlist,
+  removeFromWishlist,
+  myWishlist,
+  productDiscount,
+  getDiscountedProducts,
+  getProductsByType
+} = require("../Controller/productController");
+const authJwt = require("../middleware/authJwt");
+const {
+  isAuthenticatedUser,
+  authorizeRoles,
+} = require("../middleware/authJwt");
+const router = express.Router();
+router.route("/new").post(createProduct);
+router.route("/product/discount/:productId").put( productDiscount);
+router.route("/get/discount/product").get( getDiscountedProducts);
+
+
+router.route("/all").get(allProduct);
+router.route("/single/:productId").get(singleProduct);
+router.route("/update/:id").put(updateProducts);
+router.route("/category/:categoryId").get(productbyCategory);
+router.route("/sub/category/:subcategoryId").get(productbysubCategory);
+router.route("/update/type/:productId").put(updateType);
+router.route("/product/by/type/:type").get(getProductsByType);
+
+
+router.route("/add/wishlist/:id").post(authJwt.verifyToken, createWishlist);
+router.route("/remove/wishlist/:id").put(authJwt.verifyToken, removeFromWishlist);
+
+router.route("/wishlist/me").get(authJwt.verifyToken, myWishlist);
+
+router.route("/delete/:id").delete(deleteProducts);
+
+module.exports = router;
