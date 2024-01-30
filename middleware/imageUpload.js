@@ -17,8 +17,11 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage: storage });
 
+const storage1 = new CloudinaryStorage({ cloudinary: cloudinary, params: { folder: "Sajid-Bike-Backend/cityImage", allowed_formats: ["jpg", "jpeg", "png", "PNG", "xlsx", "xls", "pdf", "PDF", "jiff", "JIFF", "jfif", "JFIF", "mp4", "MP4", "webm", "WEBM"], }, });
+const cityImage = multer({ storage: storage1 });
 
 
 module.exports = {
-  upload
+  upload,
+  cityImage
 };

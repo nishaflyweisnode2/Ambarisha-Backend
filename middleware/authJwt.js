@@ -1,9 +1,9 @@
 const jwt = require("jsonwebtoken");
 const User = require("../Models/userModel");
-// const Seller = require("../Models/sellerModel");
-const dotenv = require("dotenv");
-// dotenv.config({ path: "configs/config.env" });
+const authConfig = require("../config/auth.config");
 const ErrorHander = require("../utils/errorhander");
+
+
 const verifyToken = (req, res, next) => {
     const token =
         req.get("Authorization")?.split("Bearer ")[1] ||
@@ -15,25 +15,26 @@ const verifyToken = (req, res, next) => {
         });
     }
 
-    jwt.verify(token, process.env.SECRET, async (err, decoded) => {
+    jwt.verify(token, authConfig.secret, async (err, decoded) => {
         if (err) {
             console.log(err);
             return res.status(401).send({
                 message: "UnAuthorised !",
             });
         }
-        const user = await User.findOne({ _id: decoded.id });
-        const user1 = await User.findOne({ _id: decoded.id });
+        const user = await User.findOne({ _id: decoded.id, userType: "USER" });
+        const user1 = await User.findOne({ _id: decoded.id, userType: "USER" });
         if (!user && !user1) {
             return res.status(400).send({
-                message: "The user that this token belongs to does not exist",
+                message: "The USER that this token belongs to does not exist",
             });
         }
         req.user = user || user1;
-        //console.log(user);
         next();
     });
 };
+
+
 const authorizeRoles = (...roles) => {
     return (req, res, next) => {
         if (!roles.includes(req.user.role)) {
@@ -59,7 +60,7 @@ const isAdmin = (req, res, next) => {
         });
     }
 
-    jwt.verify(token, process.env.SECRET, async (err, decoded) => {
+    jwt.verify(token, authConfig.secret, async (err, decoded) => {
         if (err) {
             return res.status(401).send({
                 message: "UnAuthorised ! Admin role is required! ",

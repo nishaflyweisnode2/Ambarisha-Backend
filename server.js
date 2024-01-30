@@ -46,6 +46,7 @@ const address = require("./Routers/addressRoute");
 const notify = require("./Routers/notifyRoute");
 const aboutUs = require("./Routers/aboutUsRoute");
 const admin = require("./Routers/adminRoute");
+const city = require("./Routers/cityRoutes");
 
 
 
@@ -71,6 +72,7 @@ app.use("/api/v1/address", address);
 app.use("/api/v1/notify", notify);
 app.use("/api/v1", aboutUs);
 app.use("/api/v1", admin);
+app.use("/api/v1", city);
 
 
 

@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema({
   mobileNumber: {
     type: String,
   },
-  uploadSelfie: {
+  image: {
     type: String,
   },
   name: {
@@ -22,21 +22,38 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
   },
-  address: {
-    type: String,
-
-  },
-  profileImage: {
-    type: String,
-    default: null,
-  },
   userType: {
     type: String,
-    enum: ['USER', 'ADMIN', 'VENDOR', 'WAREHOUSE', 'Driver'],
-    default: 'User',
+    enum: ['USER', 'ADMIN', 'VENDOR', 'WAREHOUSE', 'DRIVER'],
+    default: 'USER',
   },
   otp: {
     type: String
+  },
+  currentLocation: {
+    type: {
+      type: String,
+      default: "Point"
+    },
+    coordinates: {
+      type: [Number],
+      default: [0, 0]
+    },
+  },
+  state: {
+    type: String
+  },
+  isState: {
+    type: String,
+    default: false
+  },
+  city: { type: mongoose.Schema.ObjectId, ref: 'City' },
+  isCity: {
+    type: String,
+    default: false
+  },
+  refferalCode: {
+    type: String,
   },
   isVerified: {
     type: Boolean,
