@@ -14,7 +14,10 @@ const {
   myWishlist,
   productDiscount,
   getDiscountedProducts,
-  getProductsByType
+  getProductsByType,
+  getProductsByCategoryAndSubcategory,
+  addProductReview,
+  getProductsByDemand
 } = require("../Controller/productController");
 const authJwt = require("../middleware/authJwt");
 const {
@@ -23,8 +26,8 @@ const {
 } = require("../middleware/authJwt");
 const router = express.Router();
 router.route("/new").post(createProduct);
-router.route("/product/discount/:productId").put( productDiscount);
-router.route("/get/discount/product").get( getDiscountedProducts);
+router.route("/product/discount/:productId").put(productDiscount);
+router.route("/get/discount/product").get(getDiscountedProducts);
 
 
 router.route("/all").get(allProduct);
@@ -42,5 +45,12 @@ router.route("/remove/wishlist/:id").put(authJwt.verifyToken, removeFromWishlist
 router.route("/wishlist/me").get(authJwt.verifyToken, myWishlist);
 
 router.route("/delete/:id").delete(deleteProducts);
+
+router.get('/products/:category/:subcategory', [authJwt.verifyToken], getProductsByCategoryAndSubcategory);
+
+router.post('/products/:productId/reviews', [authJwt.verifyToken], addProductReview);
+
+router.get('/products/most-demand', [authJwt.verifyToken], getProductsByDemand);
+
 
 module.exports = router;

@@ -6,6 +6,9 @@ const router = express.Router();
 const otpGenerator = require('otp-generator');
 const jwt = require('jsonwebtoken');
 const config = require('config');
+const City = require('../Models/cityModel');
+
+
 // const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const randomatic = require('randomatic');
@@ -199,6 +202,15 @@ exports.updateLocation = async (req, res) => {
           updateFields.isCity = true;
       }
 
+      if (req.body.pincode) {
+        const city = await City.findOne({ pincode: req.body.pincode });
+        if (city) {
+          updateFields.city = city._id;
+          updateFields.pincode = req.body.pincode;
+          updateFields.isCity = true;
+        }
+      }
+
       const updatedUser = await User.findByIdAndUpdate(
           { _id: user._id },
           { $set: updateFields },
@@ -210,6 +222,7 @@ exports.updateLocation = async (req, res) => {
               currentLocation: updatedUser.currentLocation,
               state: updatedUser.state,
               city: updatedUser.city,
+              pincode: updatedUser.pincode
           };
           return res.status(200).send({ status: 200, message: "Location update successful.", data: obj });
       }

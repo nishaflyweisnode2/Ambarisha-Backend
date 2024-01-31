@@ -23,7 +23,7 @@ const productSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  
+
   discountedPrice: {
     type: Number,
   },
@@ -38,7 +38,7 @@ const productSchema = mongoose.Schema({
     type: [String],
     required: true,
   },
-  
+
   category: {
     type: String,
     type: mongoose.Schema.ObjectId,
@@ -49,7 +49,7 @@ const productSchema = mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: "Subcategory",
   },
-  
+
   stock: {
     type: Number,
     required: [true, "Please Enter Stock"],
@@ -60,10 +60,14 @@ const productSchema = mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["popular", "demand", "packet", "pieces", "dailyessential","everydayessential","weekendsale"],
+    enum: ["popular", "demand", "packet", "pieces", "dailyessential", "everydayessential", "weekendsale"],
     // required: true
   },
   numOfReviews: {
+    type: Number,
+    default: 0,
+  },
+  averageRating: {
     type: Number,
     default: 0,
   },

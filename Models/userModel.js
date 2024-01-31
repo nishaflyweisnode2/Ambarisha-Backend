@@ -52,6 +52,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: false
   },
+  pincode: {
+    type: String,
+  },
   refferalCode: {
     type: String,
   },

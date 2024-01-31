@@ -2,6 +2,9 @@ const User = require("../Models/userModel");
 const Order = require("../Models/orderModel");
 const Cart = require("../Models/cartModel");
 
+
+
+
 exports.allOrder = async (req, res) => {
   try {
     // Fetch all orders from the database
@@ -14,7 +17,6 @@ exports.allOrder = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 exports.singleOrder = async (req, res) => {
   const orderId = req.params.orderId;
 
@@ -38,15 +40,13 @@ exports.myOrder = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // Fetch orders for the logged-in user from the database
-    const orders = await Order.find({ user: userId }) .populate({
+    const orders = await Order.find({ user: userId }).populate({
       path: 'products.productId',
       populate: {
         path: 'category',
       },
     });;
 
-    // Send the orders as a JSON response
     res.json({ orders });
   } catch (error) {
     console.error('Error fetching user orders:', error);
@@ -55,32 +55,26 @@ exports.myOrder = async (req, res) => {
 };
 exports.orderStatus = async (req, res) => {
   const orderId = req.params.orderId;
-  const { newStatus } = req.body; // Assuming you pass the new status in the request body
+  const { newStatus } = req.body;
 
   try {
-    // Check if the order exists and belongs to the logged-in user
-    const order = await Order.findOne({ _id: orderId,  });
+    const order = await Order.findOne({ _id: orderId, });
 
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-console.log(newStatus);
-    // Update the order status
+    console.log(newStatus);
     order.status = newStatus;
     await order.save();
 
-    // Send a success response
     res.json({ message: 'Order status updated successfully', order });
   } catch (error) {
     console.error('Error updating order status:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-
 exports.getAllOrdersCategories = async (req, res) => {
   try {
-    // Fetch all orders from the database, populating the "products.productId" and "products.productId.category"
     const orders = await Order.find()
       .populate({
         path: 'products.productId',
@@ -89,31 +83,46 @@ exports.getAllOrdersCategories = async (req, res) => {
         },
       });
 
-    // Extract and collect unique category IDs from all orders
     const allCategoryIds = orders.reduce((categoryIds, order) => {
       order.products.forEach(product => {
         if (product.productId && product.productId.category) {
-          categoryIds.add(product.productId.category._id.toString()); // Assuming '_id' is the field you want to extract from the category
+          categoryIds.add(product.productId.category._id.toString());
         }
       });
       return categoryIds;
     }, new Set());
 
-    // Convert the set of category IDs to an array
     const uniqueCategoryIds = Array.from(allCategoryIds);
 
-    // Send the unique category IDs as a JSON response
-    res.json({ uniqueCategoryIds });
+    res.json({ status: 200, data: uniqueCategoryIds });
   } catch (error) {
     console.error('Error fetching category IDs from all orders:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+exports.getOrderHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
 
+    const userOrders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      status: 200,
+      data: userOrders,
+    });
+  } catch (error) {
+    console.error('Error fetching order history:', error);
+    return res.status(500).json({
+      status: 500,
+      message: 'Internal server error',
+      data: error.message,
+    });
+  }
+};
 exports.onetimeAll = async (req, res) => {
   try {
     const onetimeOrders = await Order.find({ frequency: "onetime" });
-    res.json({onetimeOrders});
+    res.json({ onetimeOrders });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch onetime orders" });
@@ -122,15 +131,16 @@ exports.onetimeAll = async (req, res) => {
 exports.dailyAll = async (req, res) => {
   try {
     const onetimeOrders = await Order.find({ frequency: "daily" });
-    res.json({onetimeOrders});
+    res.json({ onetimeOrders });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
-};exports.weekendAll = async (req, res) => {
+};
+exports.weekendAll = async (req, res) => {
   try {
     const onetimeOrders = await Order.find({ frequency: "weekend" });
-    res.json({onetimeOrders});
+    res.json({ onetimeOrders });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch onetime orders" });
@@ -139,7 +149,7 @@ exports.dailyAll = async (req, res) => {
 exports.weeklyAll = async (req, res) => {
   try {
     const onetimeOrders = await Order.find({ frequency: "weekly" });
-    res.json({onetimeOrders});
+    res.json({ onetimeOrders });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch onetime orders" });
@@ -148,14 +158,12 @@ exports.weeklyAll = async (req, res) => {
 exports.alternateAll = async (req, res) => {
   try {
     const onetimeOrders = await Order.find({ frequency: "alternate" });
-    res.json({onetimeOrders});
+    res.json({ onetimeOrders });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
 };
-
-
 exports.onetimeUser = async (req, res) => {
   const userId = req.user.id;
   try {
@@ -175,7 +183,8 @@ exports.dailyUser = async (req, res) => {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
-};exports.weeklyUser = async (req, res) => {
+};
+exports.weeklyUser = async (req, res) => {
   const userId = req.user.id;
   try {
     const onetimeOrder = await Order.findOne({ frequency: "weekly", user: userId });
@@ -184,7 +193,8 @@ exports.dailyUser = async (req, res) => {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
-};exports.weekendUser = async (req, res) => {
+};
+exports.weekendUser = async (req, res) => {
   const userId = req.user.id;
   try {
     const onetimeOrder = await Order.findOne({ frequency: "weekend", user: userId });
@@ -193,7 +203,8 @@ exports.dailyUser = async (req, res) => {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
-};exports.alternateUser = async (req, res) => {
+};
+exports.alternateUser = async (req, res) => {
   const userId = req.user.id;
   try {
     const onetimeOrder = await Order.findOne({ frequency: "alternate", user: userId });
