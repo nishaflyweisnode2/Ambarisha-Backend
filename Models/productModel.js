@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-// const mongoosePaginate = require("mongoose-paginate");
-// const mongooseAggregatePaginate = require("mongoose-aggregate-paginate");
+const mongoosePaginate = require("mongoose-paginate");
+const mongooseAggregatePaginate = require("mongoose-aggregate-paginate");
 
 const productSchema = mongoose.Schema({
   name: {
@@ -10,7 +10,6 @@ const productSchema = mongoose.Schema({
   unit: {
     type: String,
     enum: ["kg", "liter", "packet", "pieces"],
-    // required: true
   },
   quantity: {
     type: Number,
@@ -38,7 +37,6 @@ const productSchema = mongoose.Schema({
     type: [String],
     required: true,
   },
-
   category: {
     type: String,
     type: mongoose.Schema.ObjectId,
@@ -49,7 +47,6 @@ const productSchema = mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: "Subcategory",
   },
-
   stock: {
     type: Number,
     required: [true, "Please Enter Stock"],
@@ -61,7 +58,6 @@ const productSchema = mongoose.Schema({
   type: {
     type: String,
     enum: ["popular", "demand", "packet", "pieces", "dailyessential", "everydayessential", "weekendsale"],
-    // required: true
   },
   numOfReviews: {
     type: Number,
@@ -103,6 +99,10 @@ const productSchema = mongoose.Schema({
   brand: {
     type: String,
   },
+  dailyOffers: [{
+    date: Date,
+    discountAmount: Number,
+  }],
   createdAt: {
     type: Date,
     default: Date.now,
@@ -112,7 +112,7 @@ const productSchema = mongoose.Schema({
   //   },
   //   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 });
-// productSchema.plugin(mongoosePaginate);
-// productSchema.plugin(mongooseAggregatePaginate);
+productSchema.plugin(mongoosePaginate);
+productSchema.plugin(mongooseAggregatePaginate);
 
 module.exports = mongoose.model("Product", productSchema);

@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const bannerSchema = new mongoose.Schema({
+const offerSchema = new mongoose.Schema({
     category: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
@@ -13,27 +13,29 @@ const bannerSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product',
     },
-    name: {
+    title: {
+        type: String,
+    },
+    image: {
         type: String,
     },
     description: {
         type: String,
     },
-    image: {
-        type: String
-    },
-    type: {
+    code: {
         type: String,
-        enum: ['top', 'bottom', 'middle'],
+        unique: true,
+        trim: true,
     },
-    link: {
-        type: String,
+    discountPercentage: {
+        type: Number,
     },
-    isActive: {
-        type: Boolean,
-        default: false,
+    validFrom: {
+        type: Date,
     },
-
+    validTo: {
+        type: Date,
+    },
 });
 
-module.exports = mongoose.model("Banner", bannerSchema);
+module.exports = mongoose.model('Offer', offerSchema);

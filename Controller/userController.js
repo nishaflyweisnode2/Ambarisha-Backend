@@ -7,6 +7,10 @@ const otpGenerator = require('otp-generator');
 const jwt = require('jsonwebtoken');
 const config = require('config');
 const City = require('../Models/cityModel');
+const SuggestedProduct = require('../Models/suggestedProductModel');
+const RecycleBin = require('../Models/recycleBagmodel');
+const Holiday = require('../Models/holidayModel');
+
 
 
 // const multer = require('multer');
@@ -47,7 +51,7 @@ exports.registerUser = async (req, res) => {
     const otp = randomatic('0', 4);
     // Save the generated OTP to the user's record in the database
     const user = await User.findOneAndUpdate(
-      { mobileNumber },
+      { mobileNumber, reffralCode: await reffralCode() },
       { otp },
       { new: true, upsert: true }
     );
@@ -55,10 +59,10 @@ exports.registerUser = async (req, res) => {
     // Send OTP via SMS using Twilio
     // ...
 
-    res.json({ message: 'OTP sent successfully', user });
+    return res.json({ status: 201, message: 'OTP sent successfully', data: user });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({ status: 500, error: 'Internal Server Error' });
   }
 };
 
@@ -92,16 +96,15 @@ exports.verifyOtp = async (req, res) => {
       // Generate a JWT token
       // const token = jwt.sign({ userId: user._id }, config.get('jwtSecret'));
       const token = jwt.sign({ id: user._id }, "node5flyweis");
-      res.json({ message: 'OTP verification successful.', token, user });
+      return res.json({ status: 200, message: 'OTP verification successful.', data: token, user });
     } else {
-      res.status(401).json({ error: 'User not verified' });
+      return res.status(401).json({ status: 401, message: 'User not verified' });
     }
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({ status: 500, error: 'Internal Server Error' });
   }
 };
-
 
 exports.loginUser = async (req, res) => {
 
@@ -127,10 +130,10 @@ exports.loginUser = async (req, res) => {
     // Send the OTP to the user (e.g., via SMS, email, etc.)
     // ...
 
-    res.json({ message: 'OTP generated and sent to the user', user });
+    return res.json({ status: 200, message: 'OTP generated and sent to the user', data: user });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({ status: 500, error: 'Internal Server Error' });
   }
 };
 
@@ -154,13 +157,13 @@ exports.verifyOtplogin = async (req, res) => {
       user.otp = undefined;
       await user.save();
 
-      res.json({ message: 'OTP verification successful.', user, token });
+      return res.json({ status: 200, message: 'OTP verification successful.', data: user, token });
     } else {
-      res.status(401).json({ error: 'Invalid OTP' });
+      return res.status(401).json({ status: 401, error: 'Invalid OTP' });
     }
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({ status: 500, error: 'Internal Server Error' });
   }
 };
 
@@ -170,80 +173,79 @@ exports.getUserDetails = async (req, res) => {
     if (!user) {
       res.status(404).send({ status: 404, message: "user not found ", data: {}, });
     } else {
-      res.status(200).send({ status: 200, message: "get profile ", data: user, });
+      return res.status(200).send({ status: 200, message: "get profile ", data: user, });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ status: 500, message: "Server error" });
   }
 };
 
 exports.updateLocation = async (req, res) => {
   try {
-      const user = await User.findOne({ _id: req.user._id });
-      if (!user) {
-          return res.status(404).send({ status: 404, message: "User not found" });
+    const user = await User.findOne({ _id: req.user._id });
+    if (!user) {
+      return res.status(404).send({ status: 404, message: "User not found" });
+    }
+
+    let updateFields = {};
+
+    if (req.body.currentLat || req.body.currentLong) {
+      const coordinates = [parseFloat(req.body.currentLat), parseFloat(req.body.currentLong)];
+      updateFields.currentLocation = { type: "Point", coordinates };
+    }
+
+    if (req.body.state) {
+      updateFields.state = req.body.state;
+      updateFields.isState = true;
+    }
+
+    if (req.body.city) {
+      updateFields.city = req.body.city;
+      updateFields.isCity = true;
+    }
+
+    if (req.body.pincode) {
+      const city = await City.findOne({ pincode: req.body.pincode });
+      if (city) {
+        updateFields.city = city._id;
+        updateFields.pincode = req.body.pincode;
+        updateFields.isCity = true;
       }
+    }
 
-      let updateFields = {};
+    const updatedUser = await User.findByIdAndUpdate(
+      { _id: user._id },
+      { $set: updateFields },
+      { new: true }
+    );
 
-      if (req.body.currentLat || req.body.currentLong) {
-          const coordinates = [parseFloat(req.body.currentLat), parseFloat(req.body.currentLong)];
-          updateFields.currentLocation = { type: "Point", coordinates };
-      }
-
-      if (req.body.state) {
-          updateFields.state = req.body.state;
-          updateFields.isState = true;
-      }
-
-      if (req.body.city) {
-          updateFields.city = req.body.city;
-          updateFields.isCity = true;
-      }
-
-      if (req.body.pincode) {
-        const city = await City.findOne({ pincode: req.body.pincode });
-        if (city) {
-          updateFields.city = city._id;
-          updateFields.pincode = req.body.pincode;
-          updateFields.isCity = true;
-        }
-      }
-
-      const updatedUser = await User.findByIdAndUpdate(
-          { _id: user._id },
-          { $set: updateFields },
-          { new: true }
-      );
-
-      if (updatedUser) {
-          let obj = {
-              currentLocation: updatedUser.currentLocation,
-              state: updatedUser.state,
-              city: updatedUser.city,
-              pincode: updatedUser.pincode
-          };
-          return res.status(200).send({ status: 200, message: "Location update successful.", data: obj });
-      }
+    if (updatedUser) {
+      let obj = {
+        currentLocation: updatedUser.currentLocation,
+        state: updatedUser.state,
+        city: updatedUser.city,
+        pincode: updatedUser.pincode
+      };
+      return res.status(200).send({ status: 200, message: "Location update successful.", data: obj });
+    }
   } catch (error) {
-      console.error(error);
-      return res.status(500).send({ status: 500, message: "Server error" + error.message });
+    console.error(error);
+    return res.status(500).send({ status: 500, message: "Server error" + error.message });
   }
 };
 
 exports.allUser = async (req, res) => {
-
   try {
-    // Find all users
     const users = await User.find();
 
-    res.status(200).json({ success: true, data: users });
+    return res.status(200).json({ status: 200, success: true, data: users });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ status: 500, success: false, message: 'Internal server error' });
   }
 };
+
 exports.deleteUser = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -258,10 +260,10 @@ exports.deleteUser = async (req, res) => {
     // Delete the user
     await User.deleteOne({ _id: userId });
 
-    res.status(200).json({ success: true, message: 'User deleted successfully' });
+    return res.status(200).json({ status: 200, success: true, message: 'User deleted successfully' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ status: 500, success: false, message: 'Internal server error' });
   }
 };
 
@@ -291,9 +293,217 @@ exports.updateProfile = async (req, res) => {
       new: true,
     });
 
-    return res.status(200).json({ msg: 'Profile updated successfully', user });
+    return res.status(200).json({ status: 200, msg: 'Profile updated successfully', user });
   } catch (error) {
     console.error(error);
-    res.status(500).send({ status: 500, message: 'Server error' + error.message });
+    return res.status(500).send({ status: 500, message: 'Server error' + error.message });
+  }
+};
+
+exports.createSuggestedProduct = async (req, res) => {
+  try {
+    const { productName } = req.body;
+    const userId = req.user.id;
+
+    const suggestedProduct = new SuggestedProduct({
+      productName,
+      user: userId,
+    });
+
+    await suggestedProduct.save();
+
+    return res.status(201).json({ message: 'Suggested product created successfully', data: suggestedProduct });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+  }
+};
+
+exports.getAllSuggestedProducts = async (req, res) => {
+  try {
+    const suggestedProducts = await SuggestedProduct.find().populate('user', 'username email'); // Assuming user has 'username' and 'email' fields
+
+    return res.status(200).json({ status: 200, message: 'Suggested products retrieved successfully', data: suggestedProducts });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+  }
+};
+
+exports.getSuggestedProductById = async (req, res) => {
+  try {
+    const suggestedProduct = await SuggestedProduct.findById(req.params.productId).populate('user', 'username email');
+
+    if (!suggestedProduct) {
+      return res.status(404).json({ message: 'Suggested product not found', data: null });
+    }
+
+    return res.status(200).json({ status: 200, message: 'Suggested product retrieved successfully', data: suggestedProduct });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+  }
+};
+
+exports.updateSuggestedProduct = async (req, res) => {
+  try {
+    const { productName } = req.body;
+
+    const suggestedProduct = await SuggestedProduct.findByIdAndUpdate(req.params.productId, { productName }, { new: true });
+
+    if (!suggestedProduct) {
+      return res.status(404).json({ message: 'Suggested product not found', data: null });
+    }
+
+    return res.status(200).json({ status: 200, message: 'Suggested product updated successfully', data: suggestedProduct });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+  }
+};
+
+exports.deleteSuggestedProduct = async (req, res) => {
+  try {
+    const deletedProduct = await SuggestedProduct.findByIdAndDelete(req.params.productId);
+
+    if (!deletedProduct) {
+      return res.status(404).json({ message: 'Suggested product not found', data: null });
+    }
+
+    return res.status(200).json({ status: 200, message: 'Suggested product deleted successfully', data: deletedProduct });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+  }
+};
+
+exports.addToRecycleBin = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { bag } = req.body;
+
+    const recycleBin = await RecycleBin.create({
+      user: userId,
+      bag: bag,
+      voucherAmount: 0,
+      status: 'Pending'
+    });
+
+    return res.status(201).json({ status: 201, message: 'Item added to recycle bin. Waiting for voucher approval.', data: recycleBin });
+  } catch (error) {
+    console.error('Error adding item to recycle bin:', error);
+    return res.status(500).json({ status: 500, message: 'Internal server error' });
+  }
+};
+
+exports.getRecycleBinItemsByUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const recycleBinItems = await RecycleBin.find({ user: userId });
+
+    return res.status(200).json({ status: 200, message: 'Recycle bin items retrieved', data: recycleBinItems });
+  } catch (error) {
+    console.error('Error retrieving recycle bin items:', error);
+    return res.status(500).json({ status: 500, message: 'Internal server error' });
+  }
+};
+exports.getAllRecycleBinItems = async (req, res) => {
+  try {
+    const recycleBinItems = await RecycleBin.find();
+
+    return res.status(200).json({ status: 200, message: 'Recycle bin items retrieved', data: recycleBinItems });
+  } catch (error) {
+    console.error('Error retrieving recycle bin items:', error);
+    return res.status(500).json({ status: 500, message: 'Internal server error' });
+  }
+};
+
+exports.approveVoucher = async (req, res) => {
+  try {
+    const { itemId } = req.params
+    const { voucherAmount } = req.body;
+
+    const recycleBinItem = await RecycleBin.findById(itemId);
+
+    if (!recycleBinItem) {
+      return res.status(404).json({ status: 404, message: 'Recycle bin item not found' });
+    }
+
+    recycleBinItem.voucherAmount = voucherAmount;
+    recycleBinItem.status = 'Approved';
+    await recycleBinItem.save();
+
+    return res.status(200).json({ status: 200, message: 'Voucher amount approved successfully', data: recycleBinItem });
+  } catch (error) {
+    console.error('Error approving voucher amount:', error);
+    return res.status(500).json({ status: 500, message: 'Internal server error' });
+  }
+};
+
+exports.deleteRecycleBinItem = async (req, res) => {
+  try {
+    const itemId = req.params.itemId;
+
+    const deletedItem = await RecycleBin.findByIdAndDelete(itemId);
+
+    if (!deletedItem) {
+      return res.status(404).json({ status: 404, message: 'Recycle bin item not found' });
+    }
+
+    return res.status(200).json({ status: 200, message: 'Recycle bin item deleted', data: deletedItem });
+  } catch (error) {
+    console.error('Error deleting recycle bin item:', error);
+    return res.status(500).json({ status: 500, message: 'Internal server error' });
+  }
+};
+
+exports.createHoliday = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body;
+    const holiday = await Holiday.create({ startDate, endDate });
+    return res.status(201).json({ status: 201, message: 'Holiday created successfully', data: holiday });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error' });
+  }
+};
+
+exports.getAllHolidays = async (req, res) => {
+  try {
+    const holidays = await Holiday.find();
+    return res.status(200).json({ status: 200, data: holidays });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error' });
+  }
+};
+
+exports.updateHoliday = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate } = req.body;
+    const holiday = await Holiday.findByIdAndUpdate(id, { startDate, endDate }, { new: true });
+    if (!holiday) {
+      return res.status(404).json({ status: 404, message: 'Holiday not found' });
+    }
+    return res.status(200).json({ status: 200, message: 'Holiday updated successfully', data: holiday });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error' });
+  }
+};
+
+exports.deleteHoliday = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const holiday = await Holiday.findByIdAndDelete(id);
+    if (!holiday) {
+      return res.status(404).json({ status: 404, message: 'Holiday not found' });
+    }
+    return res.status(200).json({ status: 200, message: 'Holiday deleted successfully', data: holiday });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error' });
   }
 };

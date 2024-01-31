@@ -17,7 +17,12 @@ const {
   getProductsByType,
   getProductsByCategoryAndSubcategory,
   addProductReview,
-  getProductsByDemand
+  getProductsByDemand,
+  createProductOffer,
+  getProductOffers,
+  updateProductOffer,
+  deleteProductOffer,
+  getAllProductsWithOffers,
 } = require("../Controller/productController");
 const authJwt = require("../middleware/authJwt");
 const {
@@ -51,6 +56,16 @@ router.get('/products/:category/:subcategory', [authJwt.verifyToken], getProduct
 router.post('/products/:productId/reviews', [authJwt.verifyToken], addProductReview);
 
 router.get('/products/most-demand', [authJwt.verifyToken], getProductsByDemand);
+
+router.post('/products/offers', [authJwt.isAdmin], createProductOffer);
+
+router.get('/products/:productId/get/offers', getProductOffers);
+
+router.put('/products/:productId/offers/:offerId', [authJwt.isAdmin], updateProductOffer);
+
+router.delete('/products/:productId/offers/:offerId', [authJwt.isAdmin], deleteProductOffer);
+
+router.get('/products/all/offers/product', getAllProductsWithOffers);
 
 
 module.exports = router;

@@ -443,3 +443,126 @@ exports.getProductsByDemand = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+
+exports.createProductOffer = async (req, res) => {
+  try {
+    const { productId, date, discountAmount } = req.body;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const existingOfferIndex = product.dailyOffers.findIndex(offer => offer.date.toDateString() === new Date(date).toDateString());
+    if (existingOfferIndex !== -1) {
+      return res.status(400).json({ message: 'An offer already exists for this date' });
+    }
+
+    product.dailyOffers.push({ date, discountAmount });
+    await product.save();
+
+    return res.status(201).json({ status: 201, message: 'Offer created successfully', data: product });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Internal server error' });
+  }
+};
+
+exports.getProductOffers = async (req, res) => {
+  try {
+    const productId = req.params.productId;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    return res.status(200).json({ status: 200, data: product.dailyOffers });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Internal server error' });
+  }
+};
+
+exports.updateProductOffer = async (req, res) => {
+  try {
+    const { productId, offerId } = req.params;
+    const { date, discountAmount } = req.body;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const offerIndex = product.dailyOffers.findIndex(offer => offer._id.toString() === offerId);
+    if (offerIndex === -1) {
+      return res.status(404).json({ status: 404, message: 'Offer not found' });
+    }
+
+    product.dailyOffers[offerIndex].date = date;
+    product.dailyOffers[offerIndex].discountAmount = discountAmount;
+
+    await product.save();
+
+    return res.status(200).json({ status: 200, message: 'Offer updated successfully', data: product });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Internal server error' });
+  }
+};
+
+exports.deleteProductOffer = async (req, res) => {
+  try {
+    const { productId, offerId } = req.params;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const offerIndex = product.dailyOffers.findIndex(offer => offer._id.toString() === offerId);
+    if (offerIndex === -1) {
+      return res.status(404).json({ status: 404, message: 'Offer not found' });
+    }
+
+    product.dailyOffers.splice(offerIndex, 1);
+    await product.save();
+
+    return res.status(200).json({ status: 200, message: 'Offer deleted successfully', data: product });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Internal server error' });
+  }
+};
+
+exports.getAllProductsWithOffers = async (req, res) => {
+  try {
+    const dateString = req.params.date || new Date().toISOString().split('T')[0];
+    console.log(dateString);
+    const targetDate = new Date(dateString);
+    console.log(targetDate);
+
+    const productsWithOffers = await Product.find({
+      dailyOffers: {
+        $elemMatch: {
+          date: {
+            $gte: targetDate, 
+            $lt: new Date(targetDate.getTime() + 86400000) 
+          }
+        }
+      }
+    });
+
+    res.status(200).json({
+      status: 200,
+      data: productsWithOffers
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
+  }
+};
