@@ -8,6 +8,7 @@ const Offer = require('../Models/offerModel');
 const Product = require('../Models/productModel');
 const Category = require('../Models/categoryModel');
 const Subcategory = require('../Models/subCategoryModel');
+const Plan = require('../Models/planModel');
 
 
 
@@ -314,5 +315,66 @@ exports.deleteOffer = async (req, res) => {
     } catch (error) {
         console.error(error);
         return res.status(500).json({ status: 500, message: 'Error deleting offer', error: error.message });
+    }
+};
+
+exports.createPlan = async (req, res) => {
+    try {
+        const { name, status } = req.body;
+        const plan = await Plan.create({ name, status });
+        return res.status(201).json({ status: 201, message: 'Plan created successfully', data: plan });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+    }
+};
+
+exports.getAllPlans = async (req, res) => {
+    try {
+        const plans = await Plan.find();
+        return res.status(200).json({ status: 200, data: plans });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+    }
+};
+
+exports.getPlanById = async (req, res) => {
+    try {
+        const plan = await Plan.findById(req.params.id);
+        if (!plan) {
+            return res.status(404).json({ status: 404, message: 'Plan not found' });
+        }
+        return res.status(200).json({ status: 200, data: plan });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+    }
+};
+
+exports.updatePlan = async (req, res) => {
+    try {
+        const { name, status } = req.body;
+        const plan = await Plan.findByIdAndUpdate(req.params.id, { name, status }, { new: true });
+        if (!plan) {
+            return res.status(404).json({ status: 404, message: 'Plan not found' });
+        }
+        res.status(200).json({ status: 200, message: 'Plan updated successfully', data: plan });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+    }
+};
+
+exports.deletePlan = async (req, res) => {
+    try {
+        const plan = await Plan.findByIdAndDelete(req.params.id);
+        if (!plan) {
+            return res.status(404).json({ status: 404, message: 'Plan not found' });
+        }
+        res.status(200).json({ status: 200, message: 'Plan deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ status: 500, message: 'Server error', error: error.message });
     }
 };
