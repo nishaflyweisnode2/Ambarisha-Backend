@@ -3,6 +3,10 @@ const Wishlist = require("../Models/wishlistModel");
 const mongoose = require("mongoose");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const Category = require("../Models/categoryModel");
+const Subcategory = require("../Models/subCategoryModel");
+const Plan = require('../Models/planModel');
+const Subs = require("../Models/subsModel");
+
 const imagePattern = "[^\\s]+(.*?)\\.(jpg|jpeg|png|gif|JPG|JPEG|PNG|GIF)$";
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
@@ -37,29 +41,66 @@ exports.createProduct = catchAsyncErrors(async (req, res, next) => {
       const {
         name,
         description,
-        price,
+        unit,
         quantity,
-        discountedPrice,
+        color,
+        brand,
+        originalPrice,
+        discount,
+        discountActive,
         category,
         subcategory,
         stock,
         features,
       } = req.body;
 
+      const subCategories = await Subcategory.findById(subcategory)
+
+      if (!subCategories) {
+        return res.status(404).json({ status: 404, message: "subCategories not found" });
+      }
+      const categories = await Category.findById(category)
+      if (!categories) {
+        return res.status(404).json({ status: 404, message: "categories not found" });
+      }
+
+      let discountPrice = 0;
+      if (discountActive === "true") {
+        discountPrice = Number((originalPrice - (originalPrice * discount) / 100).toFixed(2));
+      }
+
       const data = {
         name,
         description,
-        price,
+        unit,
         quantity,
-        discountedPrice,
-        images: uploadedImages,
+        color,
+        brand,
+        originalPrice,
+        discount,
+        discountActive,
+        discountPrice,
         category,
         subcategory,
         stock,
         features,
+        images: uploadedImages,
       };
 
       const product = await Product.create(data);
+
+      const plans = await Plan.find();
+
+      for (let plan of plans) {
+        const subscriptionData = {
+          productId: product._id,
+          planId: plan._id,
+          weight: unit,
+          status: false,
+        };
+
+        await Subs.create(subscriptionData);
+      }
 
       return res.status(200).json({
         message: "Product added successfully.",
@@ -181,38 +222,58 @@ exports.singleProduct = catchAsyncErrors(async (req, res, next) => {
 });
 
 exports.updateProducts = catchAsyncErrors(async (req, res, next) => {
-
   try {
     const productId = req.params.id;
-
-    // Find the product by ID
     const product = await Product.findById(productId);
 
     if (!product) {
       return res.status(404).json({ status: 404, message: 'Product not found' });
     }
 
-    // Check if images were provided and handle image upload
     upload.array('image')(req, res, async (err) => {
       if (err) {
         return res.status(400).json({ status: 400, message: err.message });
       }
 
       try {
-        const images = [];
-        for (let i = 0; i < req.files.length; i++) {
-          images.push(req.files[i] ? req.files[i].path : '');
-        }
+        const images = await Promise.all(req.files.map(async (file) => {
+          return file ? file.path : '';
+        }));
 
-        // Update the product's information and images if provided
-        Object.assign(product, req.body);
+        let updatedFields = { ...req.body };
 
-        // If new images were provided, update the images
         if (images.length > 0) {
-          product.images = images;
+          updatedFields.images = images;
         }
 
-        // Save the updated product
+        Object.assign(product, updatedFields);
+
+        const plans = await Plan.find();
+
+        for (let plan of plans) {
+          let subscription = await Subs.findOne({ productId, planId: plan._id });
+
+          if (!subscription) {
+            subscription = new Subs({
+              productId,
+              planId: plan._id,
+              weight: product.unit,
+              status: false,
+            });
+          }
+
+          subscription = Object.assign(subscription, { weight: product.unit });
+          await subscription.save();
+        }
+
+        if (product.discountActive === true) {
+          if (product.originalPrice && product.discount) {
+            product.discountPrice = Number((product.originalPrice - (product.originalPrice * product.discount) / 100).toFixed(2));
+          }
+        } else {
+          product.discountPrice = 0;
+        }
+
         const updatedProduct = await product.save();
 
         return res.status(200).json({
@@ -238,6 +299,7 @@ exports.updateProducts = catchAsyncErrors(async (req, res, next) => {
     });
   }
 });
+
 exports.deleteProducts = catchAsyncErrors(async (req, res, next) => {
 
   const productId = req.params.id;
@@ -547,8 +609,8 @@ exports.getAllProductsWithOffers = async (req, res) => {
       dailyOffers: {
         $elemMatch: {
           date: {
-            $gte: targetDate, 
-            $lt: new Date(targetDate.getTime() + 86400000) 
+            $gte: targetDate,
+            $lt: new Date(targetDate.getTime() + 86400000)
           }
         }
       }

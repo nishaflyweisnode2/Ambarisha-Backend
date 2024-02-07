@@ -23,6 +23,12 @@ router.get('/admin/plans', /*[authJwt.isAdmin],*/ auth.getAllPlans);
 router.get('/admin/plans/:id', /*[authJwt.isAdmin],*/ auth.getPlanById);
 router.put('/admin/plans/:id', [authJwt.isAdmin], auth.updatePlan);
 router.delete('/admin/plans/:id', [authJwt.isAdmin], auth.deletePlan);
+router.put('/admin/subscriptions/:subscriptionId', [authJwt.isAdmin], auth.updateSubscription);
+router.post('/admin/membership', [authJwt.isAdmin], auth.createMembership);
+router.get('/admin/membership', auth.getMemberships);
+router.get('/admin/membership/:id', auth.getMembershipById);
+router.put('/admin/membership/:id', [authJwt.isAdmin], auth.updateMembership);
+router.delete('/admin/membership/:id', [authJwt.isAdmin], auth.deleteMembership);
 
 
 module.exports = router;

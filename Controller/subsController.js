@@ -1,22 +1,9 @@
-const subs = require("../Models/subsModel");
+const Subs = require("../Models/subsModel");
 
-exports.addsubs = async (req, res) => {
-  try {
-    const subsData = await subs.create({ subs: req.body.subs });
-    res.status(200).json({
-      data: subsData,
-      message: "  subs Added ",
-      details: subsData,
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(400).send({ message: err.message });
-  }
-};
 
 exports.getsubs = async (req, res) => {
   try {
-    const data = await subs.find();
+    const data = await Subs.find();
     console.log(data);
     res.status(200).json({
       subs: data,
@@ -26,32 +13,26 @@ exports.getsubs = async (req, res) => {
   }
 };
 
-exports.updatesubs = async (req, res) => {
+exports.getsubsById = async (req, res) => {
   try {
-    const Updatedsubs = await subs
-      .findOneAndUpdate(
-        { _id: req.params.id },
-        {
-          subs: req.body.subs,
-        }
-      )
-      .exec();
-    console.log(Updatedsubs);
+    const id = req.params.id;
+    const subscription = await Subs.findById(id);
+    if (!subscription) {
+      return res.status(404).json({ status: 404, message: 'Subscription not found' });
+    }
     res.status(200).json({
-      message: "subs Update",
+      status: 200,
+      data: subscription,
     });
   } catch (err) {
-    console.log(err);
-    res.status(401).json({
-      mesage: err.mesage,
-    });
+    res.status(400).send({ mesage: err.mesage });
   }
 };
 
 exports.Deletesubs = async (req, res) => {
   try {
     const id = req.params.id;
-    await subs.deleteOne({ _id: id });
+    await Subs.deleteOne({ _id: id });
     res.status(200).send({ message: "subs deleted " });
   } catch (err) {
     console.log(err);

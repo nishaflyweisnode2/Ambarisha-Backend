@@ -9,30 +9,30 @@ const productSchema = mongoose.Schema({
   },
   unit: {
     type: String,
-    enum: ["kg", "liter", "packet", "pieces"],
+    enum: ["Kg", "Liter", "Packet", "Pieces"],
   },
   quantity: {
     type: Number,
   },
-  price: {
+  originalPrice: {
     type: Number,
-    required: true,
-  },
-  isDiscount: {
+    default: 0
+},
+discountPrice: {
+    type: Number,
+    default: 0
+},
+discount: {
+    type: Number,
+    default: 0
+},
+discountActive: {
     type: Boolean,
-    default: false,
-  },
-
-  discountedPrice: {
-    type: Number,
-  },
-  discount: {
-    type: Number,
-  },
+    default: false
+},
   description: {
     type: String,
   },
-
   images: {
     type: [String],
     required: true,
@@ -51,9 +51,6 @@ const productSchema = mongoose.Schema({
     type: Number,
     required: [true, "Please Enter Stock"],
     default: 1,
-  },
-  details: {
-    type: [String],
   },
   type: {
     type: String,
@@ -88,16 +85,9 @@ const productSchema = mongoose.Schema({
       },
     },
   ],
-  //   sellerId: {
-  //     type: mongoose.Schema.ObjectId,
-  //     ref: "Seller",
-
-  //   },
-  type: {
-    type: String,
-  },
   brand: {
-    type: String,
+    type: mongoose.Schema.ObjectId,
+    ref: "Brand",
   },
   dailyOffers: [{
     date: Date,
@@ -107,10 +97,6 @@ const productSchema = mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  //   createdByRole: {
-  //     type: String,
-  //   },
-  //   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 });
 productSchema.plugin(mongoosePaginate);
 productSchema.plugin(mongooseAggregatePaginate);

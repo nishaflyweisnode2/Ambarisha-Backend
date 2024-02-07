@@ -9,7 +9,9 @@ const Product = require('../Models/productModel');
 const Category = require('../Models/categoryModel');
 const Subcategory = require('../Models/subCategoryModel');
 const Plan = require('../Models/planModel');
-
+const Subs = require("../Models/subsModel");
+const catchAsyncErrors = require("../middleware/catchAsyncErrors");
+const Membership = require('../Models/memberShipModel');
 
 
 
@@ -376,5 +378,96 @@ exports.deletePlan = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+    }
+};
+
+exports.updateSubscription = catchAsyncErrors(async (req, res, next) => {
+    try {
+        const { subscriptionId } = req.params;
+        const { weight, status } = req.body;
+
+        const subscription = await Subs.findById(subscriptionId);
+        if (!subscription) {
+            return res.status(404).json({ status: 404, message: 'Subscription not found' });
+        }
+
+        if (weight) {
+            subscription.weight = weight;
+        }
+        if (status !== undefined) {
+            subscription.status = status;
+        }
+
+        const updatedSubscription = await subscription.save();
+
+        return res.status(200).json({
+            status: 200,
+            message: 'Subscription updated successfully',
+            data: updatedSubscription,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            status: 500,
+            message: 'Internal server error',
+            data: error.message,
+        });
+    }
+});
+
+exports.createMembership = async (req, res) => {
+    try {
+        const membership = await Membership.create(req.body);
+        res.status(201).json({ success: true, data: membership });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+exports.getMemberships = async (req, res) => {
+    try {
+        const memberships = await Membership.find();
+        res.status(200).json({ success: true, count: memberships.length, data: memberships });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+exports.getMembershipById = async (req, res) => {
+    try {
+        const membership = await Membership.findById(req.params.id);
+        if (!membership) {
+            return res.status(404).json({ success: false, message: 'Membership not found' });
+        }
+        res.status(200).json({ success: true, data: membership });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+exports.updateMembership = async (req, res) => {
+    try {
+        const membership = await Membership.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+            runValidators: true
+        });
+        if (!membership) {
+            return res.status(404).json({ success: false, message: 'Membership not found' });
+        }
+        res.status(200).json({ success: true, data: membership });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+exports.deleteMembership = async (req, res) => {
+    try {
+        const membership = await Membership.findByIdAndDelete(req.params.id);
+        if (!membership) {
+            return res.status(404).json({ success: false, message: 'Membership not found' });
+        }
+        res.status(200).json({ success: true, message: 'Membership deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
 };

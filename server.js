@@ -47,6 +47,8 @@ const notify = require("./Routers/notifyRoute");
 const aboutUs = require("./Routers/aboutUsRoute");
 const admin = require("./Routers/adminRoute");
 const city = require("./Routers/cityRoutes");
+const userSubscription = require("./Routers/userSubscriptionRoute");
+const userMembership = require("./Routers/userMemberShipRoute");
 
 
 
@@ -73,6 +75,8 @@ app.use("/api/v1/notify", notify);
 app.use("/api/v1", aboutUs);
 app.use("/api/v1", admin);
 app.use("/api/v1", city);
+app.use("/api/v1/user", userSubscription);
+app.use("/api/v1/user", userMembership);
 
 
 

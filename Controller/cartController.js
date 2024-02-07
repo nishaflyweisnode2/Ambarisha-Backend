@@ -92,13 +92,11 @@ exports.AddCart = async (req, res) => {
     const { products, frequency, dayOfWeek, specificDates, startDate, endDate } = req.body;
     const userId = req.user.id;
 
-    // Check if a cart exists for the user
     let cart = await Cart.findOne({ userId });
 
     if (cart) {
-      // If cart exists, add/update the products
       for (const product of products) {
-        const { productId, quantity, price } = product;
+        const { productId, quantity } = product;
         const dbProduct = await Product.findById(productId);
 
         if (!dbProduct) {
@@ -110,11 +108,9 @@ exports.AddCart = async (req, res) => {
         );
 
         if (existingProduct) {
-          // If product already in cart, update the quantity or handle it as needed
           existingProduct.quantity += quantity;
         } else {
-          // If product not in cart, add it
-          const productPrice = dbProduct.price;
+          const productPrice = dbProduct.isDiscountActive ? dbProduct.originalPrice : dbProduct.discountPrice;
           cart.products.push({
             productId,
             quantity,
@@ -123,26 +119,23 @@ exports.AddCart = async (req, res) => {
         }
       }
 
-      // Update cart level fields
       cart.frequency = frequency;
       cart.dayOfWeek = dayOfWeek;
       cart.specificDates = specificDates;
       cart.startDate = startDate;
       cart.endDate = endDate;
     } else {
-      // If cart doesn't exist, create a new one
       const cartProducts = [];
 
       for (const product of products) {
-        const { productId, quantity, price } = product;
+        const { productId, quantity } = product;
         const dbProduct = await Product.findById(productId);
         if (!dbProduct) {
           return res.status(400).json({ error: "Invalid product ID" });
         }
 
-        const productPrice = dbProduct.price;
+        const productPrice = dbProduct.isDiscountActive ? dbProduct.originalPrice : dbProduct.discountPrice;
 
-        // Add the product to the cart
         cartProducts.push({
           productId,
           quantity,
@@ -150,7 +143,6 @@ exports.AddCart = async (req, res) => {
         });
       }
 
-      // Create a new cart
       cart = new Cart({
         userId,
         products: cartProducts,
@@ -162,7 +154,6 @@ exports.AddCart = async (req, res) => {
       });
     }
 
-    // Save the cart to the database
     await cart.save();
 
     res.json(cart);
@@ -171,6 +162,7 @@ exports.AddCart = async (req, res) => {
     res.status(500).json({ error: "Failed to create or update cart" });
   }
 };
+
 
 
 exports.getCart = async (req, res) => {
