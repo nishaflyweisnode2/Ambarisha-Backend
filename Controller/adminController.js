@@ -12,6 +12,7 @@ const Plan = require('../Models/planModel');
 const Subs = require("../Models/subsModel");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const Membership = require('../Models/memberShipModel');
+const RewardPoint = require('../Models/rewardModel');
 
 
 
@@ -469,5 +470,87 @@ exports.deleteMembership = async (req, res) => {
         res.status(200).json({ success: true, message: 'Membership deleted successfully' });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+exports.createRewardPoint = async (req, res) => {
+    try {
+        const { user, points, description } = req.body;
+        const rewardPoint = new RewardPoint({ user, points, description });
+        await rewardPoint.save();
+        res.status(201).json({ success: true, data: rewardPoint });
+    } catch (error) {
+        console.error('Error creating reward point:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+};
+
+exports.getAllRewardPoints = async (req, res) => {
+    try {
+        const rewardPoints = await RewardPoint.find();
+        res.status(200).json({ success: true, data: rewardPoints });
+    } catch (error) {
+        console.error('Error fetching reward points:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+};
+
+exports.getAllRewardPointsByUserToken = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ status: 404, message: "User not found" });
+        }
+
+        const rewardPoints = await RewardPoint.find({ user: user._id });
+        res.status(200).json({ success: true, data: rewardPoints });
+    } catch (error) {
+        console.error('Error fetching reward points:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+};
+
+exports.getRewardPointById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const rewardPoint = await RewardPoint.findById(id);
+        if (!rewardPoint) {
+            return res.status(404).json({ success: false, message: 'Reward point not found' });
+        }
+        res.status(200).json({ success: true, data: rewardPoint });
+    } catch (error) {
+        console.error('Error fetching reward point by ID:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+};
+
+exports.updateRewardPoint = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { user, points, description } = req.body;
+        const updatedRewardPoint = await RewardPoint.findByIdAndUpdate(id, { user, points, description }, { new: true });
+        if (!updatedRewardPoint) {
+            return res.status(404).json({ success: false, message: 'Reward point not found' });
+        }
+        res.status(200).json({ success: true, data: updatedRewardPoint });
+    } catch (error) {
+        console.error('Error updating reward point:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+};
+
+exports.deleteRewardPoint = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedRewardPoint = await RewardPoint.findByIdAndDelete(id);
+        if (!deletedRewardPoint) {
+            return res.status(404).json({ success: false, message: 'Reward point not found' });
+        }
+        res.status(200).json({ success: true, message: 'Reward point deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting reward point:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };

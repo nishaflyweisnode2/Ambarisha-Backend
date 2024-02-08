@@ -5,29 +5,28 @@ const addressSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: ["home", "office", "other"],
-    default: "other", // You can set a default type if needed
+    default: "home",
   },
-  appartment: {
+  apartment: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Apartment",
-    required: true,
+  },
+  block: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "TowerBlock",
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true,
   },
-  block: {
+  block1: {
     type: String,
-    required: [true, "address required"],
   },
   floor: {
     type: String,
-    required: [true, "City is must"],
   },
   flatNo: {
     type: String,
-    required: [true, "State Must"],
   },
   avoidCalling: {
     type: Boolean,
@@ -46,6 +45,14 @@ const addressSchema = new mongoose.Schema({
     default: false,
   },
   doorstep: {
+    type: Boolean,
+    default: false,
+  },
+  tip: {
+    type: Number,
+    default: 0,
+  },
+  isTipForAllOrder: {
     type: Boolean,
     default: false,
   },

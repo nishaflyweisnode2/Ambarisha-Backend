@@ -1,6 +1,6 @@
 const express = require("express");
 const {
-  registerUser, loginUser, allUser, registerAdmin, verifyAdmin, deleteUser, loginAdmin, logout, verifyadminlogin, getUserDetails, verifyOtp, verifyOtplogin, updateProfile, updateLocation, createSuggestedProduct, getAllSuggestedProducts, getSuggestedProductById, updateSuggestedProduct, deleteSuggestedProduct, addToRecycleBin, getRecycleBinItemsByUser, getAllRecycleBinItems, approveVoucher, deleteRecycleBinItem, createHoliday, getAllHolidays, updateHoliday, deleteHoliday
+  registerUser, loginUser, allUser, registerAdmin, verifyAdmin, deleteUser, loginAdmin, logout, verifyadminlogin, getUserDetails, verifyOtp, verifyOtplogin, updateProfile, updateLocation, createSuggestedProduct, getAllSuggestedProducts, getSuggestedProductById, updateSuggestedProduct, deleteSuggestedProduct, addToRecycleBin, getRecycleBinItemsByUser, getAllRecycleBinItems, approveVoucher, deleteRecycleBinItem, createHoliday, getAllHolidays, getAllHolidaysByUserToken, updateHoliday, deleteHoliday
 } = require("../Controller/userController");
 const { upload } = require("../middleware/imageUpload");
 
@@ -49,6 +49,7 @@ router.delete('/recycle-bin/:itemId', deleteRecycleBinItem);
 router.post('/holidays', [authJwt.verifyToken], createHoliday);
 
 router.get('/holidays', getAllHolidays);
+router.get('/holidays/bytoken',  [authJwt.verifyToken], getAllHolidaysByUserToken);
 
 router.put('/holidays/:id', [authJwt.verifyToken], updateHoliday);
 

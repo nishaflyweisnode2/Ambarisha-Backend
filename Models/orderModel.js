@@ -6,6 +6,30 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    address: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Address",
+    },
+    membership: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Membership",
+    },
+    userMembership: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserMembership",
+    },
+    plan: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Plan",
+    },
+    subscription: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "subs",
+    },
+    uerrSubscription: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserSubs",
+    },
     products: [
       {
         productId: {
@@ -20,7 +44,6 @@ const orderSchema = new mongoose.Schema(
         },
       },
     ],
-    // Add other fields for order details (e.g., address, status, etc.)
     totalAmount: {
       type: String,
     },

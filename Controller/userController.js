@@ -460,8 +460,15 @@ exports.deleteRecycleBinItem = async (req, res) => {
 
 exports.createHoliday = async (req, res) => {
   try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
     const { startDate, endDate } = req.body;
-    const holiday = await Holiday.create({ startDate, endDate });
+    const holiday = await Holiday.create({ startDate, endDate, userId: user._id });
     return res.status(201).json({ status: 201, message: 'Holiday created successfully', data: holiday });
   } catch (error) {
     console.error(error);
@@ -472,6 +479,23 @@ exports.createHoliday = async (req, res) => {
 exports.getAllHolidays = async (req, res) => {
   try {
     const holidays = await Holiday.find();
+    return res.status(200).json({ status: 200, data: holidays });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error' });
+  }
+};
+
+exports.getAllHolidaysByUserToken = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
+    const holidays = await Holiday.find({ userId: user._id });
     return res.status(200).json({ status: 200, data: holidays });
   } catch (error) {
     console.error(error);

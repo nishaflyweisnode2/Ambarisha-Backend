@@ -2,16 +2,22 @@ const userSubscription = require('../Models/userSubscriptionModel');
 const User = require('../Models/userModel');
 const Product = require("../Models/productModel");
 const Plan = require('../Models/planModel');
+const Subs = require("../Models/subsModel");
 
 
 
 exports.createSubscription = async (req, res) => {
     try {
-        const { productId, planId, quantity, startDate, endDate } = req.body;
+        const { subId, productId, planId, quantity, startDate, endDate } = req.body;
 
         const user = await User.findById(req.user._id);
         if (!user) {
             res.status(404).send({ status: 404, message: "user not found ", data: {}, });
+        }
+
+        const checkSubscription = await Subs.findById(subId);
+        if (!checkSubscription) {
+          return res.status(404).json({ status: 404, message: 'Subscription not found' });
         }
 
         const product = await Product.findById(productId)
@@ -25,6 +31,7 @@ exports.createSubscription = async (req, res) => {
         }
 
         const subscription = new userSubscription({
+            subId,
             productId,
             planId,
             userId: user._id,

@@ -3,6 +3,7 @@ const {
   createAddress,
   getAddressById,
   updateAddress,
+  updateAddressInTip,
   deleteAddress,
   getAll,
 } = require("../Controller/addressController");
@@ -14,8 +15,9 @@ router.route("/new").post(authJwt.verifyToken, createAddress);
 
 router.route("/getAddress").get(authJwt.verifyToken, getAddressById);
 
-router.route("/address/:id").put(updateAddress);
-router.route("/address/:id").delete(deleteAddress);
+router.route("/address/:id").put(authJwt.verifyToken, updateAddress);
+router.route("/address/tip/:id").put(authJwt.verifyToken, updateAddressInTip);
+router.route("/address/:id").delete(authJwt.verifyToken, deleteAddress);
 router.route("/address/all").get(getAll);
 
 module.exports = router;

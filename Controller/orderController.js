@@ -5,39 +5,89 @@ const Cart = require("../Models/cartModel");
 
 
 
+exports.createOrderFromCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
+    const cart = await Cart.findOne({ userId }).populate('products.productId');
+
+    if (!cart || !cart.products.length) {
+      return res.status(400).json({ message: "Cart is empty" });
+    }
+
+    let totalAmount = 0;
+    for (const product of cart.products) {
+      totalAmount += product.price * product.quantity;
+    }
+
+    const order = new Order({
+      user: userId,
+      address: cart.address,
+      membership: cart.membership,
+      userMembership: cart.userMembership,
+      plan: cart.plan,
+      subscription: cart.subscription,
+      userSubscription: cart.userSubscription,
+      products: cart.products.map(item => ({
+        productId: item.productId._id,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      totalAmount,
+    });
+
+    await order.save();
+
+    await Cart.findByIdAndDelete(userId);
+
+    return res.status(201).json({ message: "Order created successfully", order });
+  } catch (error) {
+    console.error('Error creating order:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 exports.allOrder = async (req, res) => {
   try {
-    // Fetch all orders from the database
     const orders = await Order.find();
-
-    // Send the orders as a JSON response
     res.json({ orders });
   } catch (error) {
     console.error("Error fetching orders:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
 exports.singleOrder = async (req, res) => {
   const orderId = req.params.orderId;
 
   try {
-    // Fetch the order by ID from the database
     const order = await Order.findById(orderId).populate("products.productId");
 
-    // Check if the order exists
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    // Send the order as a JSON response
     res.json({ order });
   } catch (error) {
     console.error("Error fetching order:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 exports.myOrder = async (req, res) => {
   const userId = req.user.id;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return res.status(404).json({ status: 404, message: "User not found" });
+  }
 
   try {
     const orders = await Order.find({ user: userId }).populate({
@@ -119,6 +169,8 @@ exports.getOrderHistory = async (req, res) => {
     });
   }
 };
+
+
 exports.onetimeAll = async (req, res) => {
   try {
     const onetimeOrders = await Order.find({ frequency: "onetime" });

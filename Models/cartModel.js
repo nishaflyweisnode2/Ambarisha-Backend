@@ -5,25 +5,42 @@ const cartSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+    },
+    address: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Address",
+    },
+    membership: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Membership",
+    },
+    userMembership: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserMembership",
+    },
+    plan: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Plan",
+    },
+    subscription: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "subs",
+    },
+    uerrSubscription: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserSubs",
     },
     products: [
       {
         productId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
-          required: true,
         },
         price: {
           type: Number,
         },
         quantity: {
           type: Number,
-          required: true,
-        },
-        createdBy: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
         },
       },
     ],
@@ -35,60 +52,27 @@ const cartSchema = new mongoose.Schema(
       type: String,
     },
     couponDiscount: {
-      type: String,
+      type: Number,
       default: 0,
     },
     shippingAmount: {
-      type: String,
+      type: Number,
       default: 0,
     },
     subtotal: {
-      type: String,
+      type: Number,
       default: 0,
     },
     taxAmount: {
-      type: String,
+      type: Number,
       default: 0,
     },
     discountAmount: {
-      type: String,
-      default: 0,
-    },
-    subtotalAmount: {
-      type: String,
+      type: Number,
       default: 0,
     },
     totalAmount: {
-      type: String,
-    },
-
-    frequency: {
-      type: String,
-      enum: ["","onetime","daily", "weekly", "weekend", "alternate"],
-      default: "onetime",
-    },
-    dayOfWeek: {
-      type:  [String], 
-      enum: [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday",
-      ],
-    },
-    specificDates: [
-      {
-        type: Date,
-      },
-    ],
-    startDate: {
-      type: Date,
-    },
-    endDate: {
-      type: Date,
+      type: Number,
     },
   },
 
