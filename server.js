@@ -15,9 +15,9 @@ app.use(compression({ threshold: 150 }));
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-if (process.env.NODE_ENV == "production") {
-  console.log = function () { };
-}
+// if (process.env.NODE_ENV == "production") {
+//   console.log = function () { };
+// }
 app.get("/", (req, res) => {
   res.send("Hello Ambarisha Project");
 });
