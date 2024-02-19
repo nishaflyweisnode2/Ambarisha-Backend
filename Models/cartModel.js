@@ -26,7 +26,7 @@ const cartSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "subs",
     },
-    uerrSubscription: {
+    userSubscription: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserSubs",
     },

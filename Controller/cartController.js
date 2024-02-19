@@ -499,7 +499,7 @@ exports.addSubscriptionToCart = async (req, res) => {
       return res.status(404).json({ status: 404, message: "Subscription not found" });
     }
 
-    cart.uerrSubscription = userSubscriptionId;
+    cart.userSubscription = userSubscriptionId;
     cart.subscription = subscription.subId;
     cart.plan = subscription.planId;
     await cart.save();

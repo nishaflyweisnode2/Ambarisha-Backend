@@ -68,7 +68,7 @@ exports.singleOrder = async (req, res) => {
   const orderId = req.params.orderId;
 
   try {
-    const order = await Order.findById(orderId).populate("products.productId");
+    const order = await Order.findById(orderId).populate("products.productId").populate('plan subscription userSubscription userMembership membership');
 
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
@@ -95,7 +95,7 @@ exports.myOrder = async (req, res) => {
       populate: {
         path: 'category',
       },
-    });;
+    }).populate('plan subscription userSubscription userMembership membership');
 
     res.json({ orders });
   } catch (error) {
