@@ -224,7 +224,7 @@ exports.getCart = async (req, res) => {
       return res.status(404).json({ status: 404, message: "User not found" });
     }
 
-    const cart = await Cart.findOne({ userId }).populate('products.productId', 'name price images').populate('address membership userMembership subscription uerrSubscription plan');
+    const cart = await Cart.findOne({ userId }).populate('products.productId', /*'name price images'*/).populate('address membership userMembership subscription uerrSubscription plan');
 
     if (!cart) {
       return res.status(404).json({ status: 404, message: "Cart not found" });
