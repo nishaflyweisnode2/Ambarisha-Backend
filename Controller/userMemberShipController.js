@@ -70,10 +70,10 @@ exports.getAllUserMembershipsByToken = async (req, res) => {
         if (!user) {
             res.status(404).send({ status: 404, message: "user not found ", data: {}, });
         }
+        console.log(req.user._id);
+        const userMemberships = await UserMembership.findOne({ userId: user._id });
 
-        const userMemberships = await UserMembership.findOne({ user: user._id });
-
-        res.status(200).json({ data: userMemberships });
+        res.status(200).json({ status: 200, data: userMemberships });
     } catch (error) {
         console.error('Error fetching user memberships:', error);
         res.status(500).json({ error: 'Internal server error' });
