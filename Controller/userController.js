@@ -96,7 +96,7 @@ exports.verifyOtp = async (req, res) => {
       // Generate a JWT token
       // const token = jwt.sign({ userId: user._id }, config.get('jwtSecret'));
       const token = jwt.sign({ id: user._id }, "node5flyweis");
-      return res.json({ status: 200, message: 'OTP verification successful.', data: token, user });
+      return res.json({ status: 200, message: 'OTP verification successful.', token, data: user });
     } else {
       return res.status(401).json({ status: 401, message: 'User not verified' });
     }
