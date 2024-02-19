@@ -71,7 +71,7 @@ exports.getAllUserMembershipsByToken = async (req, res) => {
             res.status(404).send({ status: 404, message: "user not found ", data: {}, });
         }
 
-        const userMemberships = await UserMembership.find({ user: user._id });
+        const userMemberships = await UserMembership.findOne({ user: user._id });
 
         res.status(200).json({ data: userMemberships });
     } catch (error) {
