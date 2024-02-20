@@ -257,19 +257,23 @@ exports.updateCartItemQuantity = async (req, res) => {
       return res.status(404).json({ status: 404, message: "Cart not found" });
     }
 
-    const existingProductIndex = cart.products.findIndex(item => item.productId.toString() === productId);
-    if (existingProductIndex === -1) {
+    const cartProductIndex = cart.products.findIndex(item => item.productId.toString() === productId);
+    if (cartProductIndex === -1) {
       return res.status(404).json({ status: 404, message: "Product not found in the cart" });
     }
 
-    const price = product.isDiscountActive ? product.discountPrice : product.originalPrice;
+    if (isNaN(quantity) || quantity <= 0) {
+      return res.status(400).json({ status: 400, message: "Invalid quantity" });
+    }
 
-    cart.products[existingProductIndex].quantity = quantity;
-    cart.products[existingProductIndex].subtotal = quantity * price;
+    cart.products[cartProductIndex].quantity = quantity;
 
-    const subTotalAmount = cart.products.reduce((acc, curr) => acc + curr.subtotal, 0);
-    cart.subtotal = subTotalAmount;
-    cart.totalAmount = subTotalAmount;
+    let subtotal = 0;
+    for (const item of cart.products) {
+      subtotal += item.price * item.quantity;
+    }
+    cart.subtotal = subtotal;
+    cart.totalAmount = subtotal;
 
     await cart.save();
 
@@ -307,7 +311,10 @@ exports.removeCartItem = async (req, res) => {
 
     cart.products.splice(existingProductIndex, 1);
 
-    const subTotalAmount = cart.products.reduce((acc, curr) => acc + curr.subtotal, 0);
+    let subTotalAmount = 0;
+    for (const item of cart.products) {
+      subTotalAmount += item.price * item.quantity;
+    }
     cart.subtotal = subTotalAmount;
     cart.totalAmount = subTotalAmount;
 
