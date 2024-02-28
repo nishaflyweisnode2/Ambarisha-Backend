@@ -8,9 +8,10 @@ const authJwt = require("../middleware/authJwt");
 
 
 router.post('/subscriptions/create', [authJwt.verifyToken], subscriptionController.createSubscription);
-router.get('/subscriptions', subscriptionController.getSubscription);
+router.get('/subscriptions/bytoken', [authJwt.verifyToken], subscriptionController.getUserSubscription);
+router.get('/subscriptions/userSub', subscriptionController.getSubscription);
 router.get('/subscriptions/:subscriptionId', subscriptionController.getSubscriptionById);
-router.put('/subscriptions/:subscriptionId', [authJwt.verifyToken],subscriptionController.updateSubscription);
+router.put('/subscriptions/:subscriptionId', [authJwt.verifyToken], subscriptionController.updateSubscription);
 router.delete('/subscriptions/:subscriptionId', [authJwt.verifyToken], subscriptionController.deleteSubscription);
 
 module.exports = router;

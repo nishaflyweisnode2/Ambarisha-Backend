@@ -530,10 +530,21 @@ exports.updateRewardPoint = async (req, res) => {
     try {
         const { id } = req.params;
         const { user, points, description } = req.body;
-        const updatedRewardPoint = await RewardPoint.findByIdAndUpdate(id, { user, points, description }, { new: true });
+
+        const foundUser = await User.findById(user);
+        if (!foundUser) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        foundUser.coin += points;
+
+        await foundUser.save();
+
+        const updatedRewardPoint = await RewardPoint.findByIdAndUpdate(id, { user, points: points, description }, { new: true });
         if (!updatedRewardPoint) {
             return res.status(404).json({ success: false, message: 'Reward point not found' });
         }
+
         res.status(200).json({ success: true, data: updatedRewardPoint });
     } catch (error) {
         console.error('Error updating reward point:', error);

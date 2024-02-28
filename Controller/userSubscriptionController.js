@@ -17,7 +17,7 @@ exports.createSubscription = async (req, res) => {
 
         const checkSubscription = await Subs.findById(subId);
         if (!checkSubscription) {
-          return res.status(404).json({ status: 404, message: 'Subscription not found' });
+            return res.status(404).json({ status: 404, message: 'Subscription not found' });
         }
 
         const product = await Product.findById(productId)
@@ -59,9 +59,22 @@ exports.createSubscription = async (req, res) => {
 
 exports.getSubscription = async (req, res) => {
     try {
-        const data = await userSubscription.find();
-        console.log(data);
+        const data = await userSubscription.find()/*.populate('subId')*/;
         res.status(200).json({
+            status: 200,
+            subs: data,
+        });
+    } catch (err) {
+        res.status(400).send({ mesage: err.mesage });
+    }
+};
+
+exports.getUserSubscription = async (req, res) => {
+    try {
+        console.log(req.user._id);
+        const data = await userSubscription.find({ userId: req.user._id })/*.populate('subId productId planId userId')*/;
+        res.status(200).json({
+            status: 200,
             subs: data,
         });
     } catch (err) {

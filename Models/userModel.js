@@ -66,6 +66,10 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  coin: {
+    type: Number,
+    default: 0,
+  },
   reffralCode: {
     type: String,
   },
