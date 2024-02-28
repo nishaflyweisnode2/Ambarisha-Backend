@@ -175,7 +175,7 @@ exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     const userId = req.user.id;
-
+    console.log(userId);
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ status: 404, message: "User not found" });
@@ -207,6 +207,14 @@ exports.addToCart = async (req, res) => {
     cart.totalAmount = subTotalAmount;
 
     await cart.save();
+
+    const membership = await UserMembership.findOne({ userId: userId, isActive: true, status: 'Completed' });
+    console.log("membership", membership);
+    if (membership) {
+      cart.membership = membership.membershipId;
+      cart.userMembership = membership._id;
+      await cart.save();
+    }
 
     return res.status(201).json({ status: 201, message: 'Product added to cart successfully', data: cart });
   } catch (error) {
