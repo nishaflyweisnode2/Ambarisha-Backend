@@ -13,6 +13,7 @@ const Subs = require("../Models/subsModel");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const Membership = require('../Models/memberShipModel');
 const RewardPoint = require('../Models/rewardModel');
+const ContactInformation = require('../Models/ContactusModel');
 
 
 
@@ -563,5 +564,70 @@ exports.deleteRewardPoint = async (req, res) => {
     } catch (error) {
         console.error('Error deleting reward point:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+};
+
+exports.createContactInformation = async (req, res) => {
+    try {
+        const { phoneCall, email, whatsappChat } = req.body;
+        const contactInfo = new ContactInformation({
+            phoneCall,
+            email,
+            whatsappChat
+        });
+        const savedContactInfo = await contactInfo.save();
+        res.status(201).json(savedContactInfo);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+exports.getAllContactInformation = async (req, res) => {
+    try {
+        const contactInfo = await ContactInformation.find();
+        res.status(200).json(contactInfo);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.getContactInformationById = async (req, res) => {
+    try {
+        const contactInfo = await ContactInformation.findById(req.params.id);
+        if (!contactInfo) {
+            return res.status(404).json({ message: 'Contact information not found' });
+        }
+        res.status(200).json(contactInfo);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.updateContactInformation = async (req, res) => {
+    try {
+        const { phoneCall, email, whatsappChat } = req.body;
+        const updatedContactInfo = await ContactInformation.findByIdAndUpdate(req.params.id, {
+            phoneCall,
+            email,
+            whatsappChat
+        }, { new: true });
+        if (!updatedContactInfo) {
+            return res.status(404).json({ message: 'Contact information not found' });
+        }
+        res.status(200).json(updatedContactInfo);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+exports.deleteContactInformation = async (req, res) => {
+    try {
+        const deletedContactInfo = await ContactInformation.findByIdAndDelete(req.params.id);
+        if (!deletedContactInfo) {
+            return res.status(404).json({ message: 'Contact information not found' });
+        }
+        res.status(200).json({ message: 'Contact information deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };

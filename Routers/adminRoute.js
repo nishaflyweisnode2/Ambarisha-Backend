@@ -31,10 +31,15 @@ router.put('/admin/membership/:id', [authJwt.isAdmin], auth.updateMembership);
 router.delete('/admin/membership/:id', [authJwt.isAdmin], auth.deleteMembership);
 router.post('/admin/reward-points', [authJwt.isAdmin], auth.createRewardPoint);
 router.get('/admin/reward-points', auth.getAllRewardPoints);
-router.get('/admin/reward-points/byUserToken',[authJwt.verifyToken], auth.getAllRewardPointsByUserToken);
+router.get('/admin/reward-points/byUserToken', [authJwt.verifyToken], auth.getAllRewardPointsByUserToken);
 router.get('/admin/reward-points/:id', auth.getRewardPointById);
 router.put('/admin/reward-points/:id', [authJwt.isAdmin], auth.updateRewardPoint);
 router.delete('/admin/reward-points/:id', [authJwt.isAdmin], auth.deleteRewardPoint);
+router.post('/admin/contact', [authJwt.isAdmin], auth.createContactInformation);
+router.get('/admin/contact', auth.getAllContactInformation);
+router.get('/admin/contact/:id', auth.getContactInformationById);
+router.put('/admin/contact/:id', [authJwt.isAdmin], auth.updateContactInformation);
+router.delete('/admin/contact/:id', [authJwt.isAdmin], auth.deleteContactInformation);
 
 
 module.exports = router;

@@ -73,6 +73,22 @@ const userSchema = new mongoose.Schema({
   reffralCode: {
     type: String,
   },
+  whatsAppNotification: {
+    type: Boolean,
+    default: false,
+  },
+  emailNotification: {
+    type: Boolean,
+    default: false,
+  },
+  smsNotification: {
+    type: Boolean,
+    default: false,
+  },
+  postPaidPlan: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now

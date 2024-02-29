@@ -1,6 +1,6 @@
 const express = require("express");
 const {
-  registerUser, loginUser, allUser, registerAdmin, verifyAdmin, deleteUser, loginAdmin, logout, verifyadminlogin, getUserDetails, verifyOtp, verifyOtplogin, updateProfile, updateLocation, createSuggestedProduct, getAllSuggestedProducts, getSuggestedProductById, updateSuggestedProduct, deleteSuggestedProduct, addToRecycleBin, getRecycleBinItemsByUser, getAllRecycleBinItems, approveVoucher, deleteRecycleBinItem, createHoliday, getAllHolidays, getAllHolidaysByUserToken, updateHoliday, deleteHoliday
+  registerUser, loginUser, allUser, registerAdmin, verifyAdmin, deleteUser, loginAdmin, logout, verifyadminlogin, getUserDetails, verifyOtp, verifyOtplogin, updateProfile, updateLocation, createSuggestedProduct, getAllSuggestedProducts, getSuggestedProductById, updateSuggestedProduct, deleteSuggestedProduct, addToRecycleBin, getRecycleBinItemsByUser, getAllRecycleBinItems, approveVoucher, deleteRecycleBinItem, createHoliday, getAllHolidays, getAllHolidaysByUserToken, updateHoliday, deleteHoliday, updateUserNotifications, deleteAccount, verifyOtpForDelete, resendOTPForDelete
 } = require("../Controller/userController");
 const { upload } = require("../middleware/imageUpload");
 
@@ -49,11 +49,18 @@ router.delete('/recycle-bin/:itemId', deleteRecycleBinItem);
 router.post('/holidays', [authJwt.verifyToken], createHoliday);
 
 router.get('/holidays', getAllHolidays);
-router.get('/holidays/bytoken',  [authJwt.verifyToken], getAllHolidaysByUserToken);
+router.get('/holidays/bytoken', [authJwt.verifyToken], getAllHolidaysByUserToken);
 
 router.put('/holidays/:id', [authJwt.verifyToken], updateHoliday);
 
 router.delete('/holidays/:id', [authJwt.verifyToken], deleteHoliday);
+
+router.put('/users/notifications', [authJwt.verifyToken], updateUserNotifications);
+
+router.delete('/user/delete-account', [authJwt.verifyToken], deleteAccount);
+router.post("/user/delete-account/:id", [authJwt.verifyToken], verifyOtpForDelete);
+router.post("/user/resendOtp/delete-account/:id", [authJwt.verifyToken], resendOTPForDelete);
+
 
 
 module.exports = router;

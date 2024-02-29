@@ -3,13 +3,15 @@ const dotenv = require("dotenv");
 require('dotenv').config({ path: './config/config.env' });
 const express = require('express');
 const router = express.Router();
-const otpGenerator = require('otp-generator');
+const newOTP = require("otp-generators");
 const jwt = require('jsonwebtoken');
 const config = require('config');
 const City = require('../Models/cityModel');
 const SuggestedProduct = require('../Models/suggestedProductModel');
 const RecycleBin = require('../Models/recycleBagmodel');
 const Holiday = require('../Models/holidayModel');
+const ChatConversation = require('../Models/chatModel');
+
 
 
 
@@ -529,5 +531,185 @@ exports.deleteHoliday = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 500, message: 'Server error' });
+  }
+};
+
+exports.updateUserNotifications = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { whatsAppNotification, emailNotification, smsNotification, postPaidPlan } = req.body;
+
+    const updateObject = {};
+    if (typeof whatsAppNotification === 'boolean') {
+      updateObject.whatsAppNotification = whatsAppNotification;
+    }
+    if (typeof emailNotification === 'boolean') {
+      updateObject.emailNotification = emailNotification;
+    }
+    if (typeof smsNotification === 'boolean') {
+      updateObject.smsNotification = smsNotification;
+    }
+    if (typeof postPaidPlan === 'boolean') {
+      updateObject.postPaidPlan = postPaidPlan;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateObject, { new: true });
+
+    if (!updatedUser) {
+      return res.status(404).json({ status: 404, message: 'User not found', data: null });
+    }
+
+    return res.status(200).json({ status: 200, message: 'User notification preferences updated successfully', data: updatedUser });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error', data: null });
+  }
+};
+
+exports.deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: 'User not found', data: null });
+    }
+    const otp = newOTP.generate(6, { alphabets: false, upperCase: false, specialChar: false, });
+
+    user.otp = otp
+    const updatedUser = await user.save();
+
+    return res.status(200).json({
+      status: 200,
+      message: 'Account deleted successfully',
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: 500,
+      message: 'Server error',
+      data: null,
+    });
+  }
+};
+
+exports.verifyOtpForDelete = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).send({ message: "user not found" });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: "Invalid" });
+    }
+    await User.findByIdAndDelete(req.params.id);
+
+    return res.status(200).json({
+      status: 200,
+      message: 'Account deleted successfully',
+      data: null,
+    });
+  } catch (err) {
+    console.log(err.message);
+    return res.status(500).send({ error: "internal server error" + err.message });
+  }
+};
+
+exports.resendOTPForDelete = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findOne({ _id: id, userType: "USER" });
+    if (!user) {
+      return res.status(404).send({ status: 404, message: "User not found" });
+    }
+    const otp = newOTP.generate(6, { alphabets: false, upperCase: false, specialChar: false, });
+    const updated = await User.findOneAndUpdate({ _id: user._id }, { otp, }, { new: true });
+    let obj = {
+      otp: updated.otp,
+      _id: updated._id
+    }
+    return res.status(200).send({ status: 200, message: "OTP resent", data: obj });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ status: 500, message: "Server error" + error.message });
+  }
+};
+
+exports.createChatConversation = async (req, res) => {
+  try {
+    const { participants } = req.body;
+    const newConversation = await ChatConversation.create({ participants });
+    res.status(201).json(newConversation);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.sendMessage = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { sender, content, image, video } = req.body;
+    const conversation = await ChatConversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+    const message = { sender, content, image, video };
+    conversation.messages.push(message);
+    await conversation.save();
+    res.status(201).json({ message: 'Message sent successfully', conversation });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.getAllMessages = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const conversation = await ChatConversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+    res.status(200).json(conversation.messages);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.getMessageById = async (req, res) => {
+  try {
+    const { conversationId, messageId } = req.params;
+    const conversation = await ChatConversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+    const message = conversation.messages.id(messageId);
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+    res.status(200).json(message);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.deleteMessageById = async (req, res) => {
+  try {
+    const { conversationId, messageId } = req.params;
+    const conversation = await ChatConversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+    const message = conversation.messages.id(messageId);
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+    message.remove();
+    await conversation.save();
+    res.status(200).json({ message: 'Message deleted successfully' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
