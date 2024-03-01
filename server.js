@@ -22,6 +22,8 @@ app.get("/", (req, res) => {
   res.send("Hello Ambarisha Project");
 });
 
+app.use('/invoices', express.static(path.join(__dirname, 'Controller', 'invoices')));
+
 
 // Route Imports
 const user = require("./Routers/userRoute");

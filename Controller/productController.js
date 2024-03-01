@@ -628,3 +628,48 @@ exports.getAllProductsWithOffers = async (req, res) => {
     });
   }
 };
+
+exports.paginateProductSearch = async (req, res) => {
+  try {
+    const { search, fromDate, toDate, categoryId, subCategoryId, type, page, limit } = req.query;
+    let query = {};
+    if (search) {
+      query.$or = [
+        { "name": { $regex: req.query.search, $options: "i" }, },
+        { "description": { $regex: req.query.search, $options: "i" }, },
+      ]
+    }
+    if (type) {
+      query.type = type
+    }
+    if (subCategoryId) {
+      query.subcategory = subCategoryId
+    }
+    if (categoryId) {
+      query.category = categoryId
+    }
+    if (fromDate && !toDate) {
+      query.createdAt = { $gte: fromDate };
+    }
+    if (!fromDate && toDate) {
+      query.createdAt = { $lte: toDate };
+    }
+    if (fromDate && toDate) {
+      query.$and = [
+        { createdAt: { $gte: fromDate } },
+        { createdAt: { $lte: toDate } },
+      ]
+    }
+    let options = {
+      page: Number(page) || 1,
+      limit: Number(limit) || 1000,
+      sort: { createdAt: -1 },
+      populate: ('category subcategory')
+    };
+    let data = await Product.paginate(query, options);
+    return res.status(200).json({ status: 200, message: "Product data found.", data: data });
+
+  } catch (err) {
+    return res.status(500).send({ msg: "internal server error ", error: err.message, });
+  }
+};

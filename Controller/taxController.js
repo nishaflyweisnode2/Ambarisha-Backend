@@ -6,7 +6,6 @@ exports.addtax = async (req, res) => {
     res.status(200).json({
       data: taxData,
       message: "  tax Added ",
-      details: taxData,
     });
   } catch (err) {
     console.log(err);

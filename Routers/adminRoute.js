@@ -40,6 +40,16 @@ router.get('/admin/contact', auth.getAllContactInformation);
 router.get('/admin/contact/:id', auth.getContactInformationById);
 router.put('/admin/contact/:id', [authJwt.isAdmin], auth.updateContactInformation);
 router.delete('/admin/contact/:id', [authJwt.isAdmin], auth.deleteContactInformation);
+router.post('/admin/cartMinimumPrice', [authJwt.isAdmin], auth.createCartMinimumPrice);
+router.get('/admin/cartMinimumPrice', auth.getCartMinimumPrice);
+router.put('/admin/cartMinimumPrice', [authJwt.isAdmin], auth.updateCartMinimumPrice);
+router.delete('/admin/cartMinimumPrice', [authJwt.isAdmin], auth.deleteCartMinimumPrice);
+router.post('/admin-issues', [authJwt.isAdmin], auth.createAdminIssue);
+router.get('/admin-issues', auth.getAllAdminIssues);
+router.get('/admin-issues/:id', auth.getAdminIssueById);
+router.put('/admin-issues/:id', [authJwt.isAdmin], auth.updateAdminIssue);
+router.delete('/admin-issues/:id', [authJwt.isAdmin], auth.deleteAdminIssue);
+
 
 
 module.exports = router;

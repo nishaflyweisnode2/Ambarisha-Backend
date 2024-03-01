@@ -11,6 +11,7 @@ const SuggestedProduct = require('../Models/suggestedProductModel');
 const RecycleBin = require('../Models/recycleBagmodel');
 const Holiday = require('../Models/holidayModel');
 const ChatConversation = require('../Models/chatModel');
+const UserOrderIssue = require('../Models/userIssueModel');
 
 
 
@@ -166,6 +167,44 @@ exports.verifyOtplogin = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ status: 500, error: 'Internal Server Error' });
+  }
+};
+
+exports.socialLogin = async (req, res) => {
+  try {
+    const { mobileNumber, email, socialType } = req.body;
+
+    const existingUser = await User.findOne({ $or: [{ email }], });
+
+    if (existingUser) {
+      const accessToken = jwt.sign({ id: existingUser.id, email: existingUser.email }, 'node5flyweis', { expiresIn: "365d" });
+      return res.status(200).json({
+        status: 200,
+        msg: "Login successfully",
+        userId: existingUser._id,
+        accessToken,
+      });
+    } else {
+      const user = await User.create({ mobileNumber, email, socialType });
+
+      if (user) {
+        const accessToken = jwt.sign({ id: user.id, email: user.email }, 'node5flyweis', { expiresIn: "365d" });
+
+        return res.status(200).json({
+          status: 200,
+          msg: "Login successfully",
+          userId: user._id,
+          accessToken,
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Error in socialLogin:", err);
+    return res.status(500).json({
+      status: 500,
+      message: "Server error",
+      error: err.message,
+    });
   }
 };
 
@@ -711,5 +750,114 @@ exports.deleteMessageById = async (req, res) => {
     res.status(200).json({ message: 'Message deleted successfully' });
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+exports.createUserOrderIssue = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { issueId, orderId, products } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
+    const userOrderIssue = new UserOrderIssue({
+      userId: user._id,
+      issueId,
+      orderId,
+      products, // Save products array
+      ticketId: await reffralCode()
+    });
+    await userOrderIssue.save();
+    res.status(201).json({ message: 'User order issue created successfully', data: userOrderIssue });
+  } catch (error) {
+    console.error('Error creating user order issue:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.getAllUserOrderByIssues = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
+    const userOrderIssues = await UserOrderIssue.find({ userId });
+    res.status(200).json({ data: userOrderIssues });
+  } catch (error) {
+    console.error('Error getting user order issues:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.getAllUserOrderIssues = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
+    const userOrderIssues = await UserOrderIssue.find();
+    res.status(200).json({ data: userOrderIssues });
+  } catch (error) {
+    console.error('Error getting user order issues:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.getUserOrderIssueById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userOrderIssue = await UserOrderIssue.findById(id);
+    if (!userOrderIssue) {
+      return res.status(404).json({ message: 'User order issue not found' });
+    }
+    res.status(200).json({ data: userOrderIssue });
+  } catch (error) {
+    console.error('Error getting user order issue by ID:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.updateUserOrderIssue = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
+    const userOrderIssue = await UserOrderIssue.findByIdAndUpdate(id, updateData, { new: true });
+    if (!userOrderIssue) {
+      return res.status(404).json({ message: 'User order issue not found' });
+    }
+    res.status(200).json({ message: 'User order issue updated successfully', data: userOrderIssue });
+  } catch (error) {
+    console.error('Error updating user order issue:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.deleteUserOrderIssue = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userOrderIssue = await UserOrderIssue.findByIdAndDelete(id);
+    if (!userOrderIssue) {
+      return res.status(404).json({ message: 'User order issue not found' });
+    }
+    res.status(200).json({ message: 'User order issue deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user order issue:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

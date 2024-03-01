@@ -1,14 +1,88 @@
 const User = require("../Models/userModel");
 const Order = require("../Models/orderModel");
 const Cart = require("../Models/cartModel");
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
+var multer = require("multer");
 
 
+const generateInvoicePDF1 = (order, user) => {
+  const invoicesDirectory = path.join(__dirname, 'invoices');
+
+  if (!fs.existsSync(invoicesDirectory)) {
+    fs.mkdirSync(invoicesDirectory);
+  }
+  console.log("**", order);
+  const invoicePath = path.join(invoicesDirectory, `invoice-${order._id}.pdf`);
+  const doc = new PDFDocument();
+  const stream = fs.createWriteStream(invoicePath);
+
+  doc.pipe(stream);
+
+  doc.fontSize(12);
+  doc.text(`Invoice for Order ${order._id}`, { align: 'center' });
+  doc.text(`Member-Ship Details ${order.membership.name}`, { align: 'center' });
+  doc.text(`Product Name ${order.products.name}`, { align: 'center' });
+  doc.text(`Product Unit ${order.products.unit}`, { align: 'center' });
+  doc.text(`Product Unit ${order.products.quantity}`, { align: 'center' });
+  doc.text(`Product Unit ${order.products.price}`, { align: 'center' });
+  doc.text(`Total Amount: $${order.totalAmount}`);
+
+  doc.end();
+
+  return invoicePath;
+};
+
+const generateInvoicePDF = (order, user) => {
+  const PDFDocument = require('pdfkit');
+  const fs = require('fs');
+  const path = require('path');
+
+  const invoicesDirectory = path.join(__dirname, 'invoices');
+  console.log("invoicesDirectory", invoicesDirectory);
+  if (!fs.existsSync(invoicesDirectory)) {
+    fs.mkdirSync(invoicesDirectory);
+  }
+
+  const invoicePath = path.join(invoicesDirectory, `invoice-${order._id}.pdf`);
+  const doc = new PDFDocument();
+  const stream = fs.createWriteStream(invoicePath);
+
+  doc.pipe(stream);
+
+  // Title
+  doc.fontSize(16).text(`Invoice for Order ${order._id}`, { align: 'center' });
+  doc.moveDown();
+
+  // User details
+  doc.fontSize(14).text(`User: ${user.name}`, { align: 'left' });
+  doc.text(`Email: ${user.email}`, { align: 'left' });
+  doc.moveDown();
+
+  // Order details
+  doc.fontSize(14).text('Order Details:', { underline: true });
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, { align: 'left' });
+  doc.text(`Total Amount: $${order.totalAmount}`, { align: 'left' });
+  doc.moveDown();
+
+  // Products
+  doc.fontSize(14).text('Products:', { underline: true });
+  order.products.forEach((product, index) => {
+    doc.text(`${index + 1}. ${product.productId.name}: Quantity: ${product.quantity}, Price: $${product.price}`, { align: 'left' });
+  });
+  doc.moveDown();
+
+  doc.end();
+
+  return invoicePath;
+};
 
 
 exports.createOrderFromCart = async (req, res) => {
   try {
     const userId = req.user.id;
-
+    console.log(userId);
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ status: 404, message: "User not found" });
@@ -20,12 +94,7 @@ exports.createOrderFromCart = async (req, res) => {
       return res.status(400).json({ message: "Cart is empty" });
     }
 
-    let totalAmount = 0;
-    for (const product of cart.products) {
-      totalAmount += product.price * product.quantity;
-    }
-
-    const order = new Order({
+    let order = new Order({
       user: userId,
       address: cart.address,
       membership: cart.membership,
@@ -38,20 +107,31 @@ exports.createOrderFromCart = async (req, res) => {
         quantity: item.quantity,
         price: item.price,
       })),
-      totalAmount,
+      subtotal: cart.subtotal,
+      taxAmount: cart.taxAmount,
+      dliveryCharge: cart.dliveryCharge,
+      discountAmount: cart.discountAmount,
+      totalAmount: cart.totalAmount,
     });
 
     await order.save();
 
-    await Cart.findByIdAndDelete(userId);
+    await Cart.findByIdAndDelete(cart._id);
 
-    return res.status(201).json({ message: "Order created successfully", order });
+    order = await Order.findById(order._id).populate("products.productId").populate('plan subscription userSubscription userMembership membership');
+
+    const invoicePath = generateInvoicePDF(order, user)
+    console.log("invoicePath", invoicePath);
+    let x = (`invoice-${order._id}.pdf`);
+    console.log("x", x);
+
+
+    return res.status(201).json({ status: 201, message: "Order created successfully", data: order, invoiceDownloadLink: `/invoices/${x}`, });
   } catch (error) {
     console.error('Error creating order:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 
 exports.allOrder = async (req, res) => {
   try {
@@ -62,7 +142,6 @@ exports.allOrder = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 exports.singleOrder = async (req, res) => {
   const orderId = req.params.orderId;

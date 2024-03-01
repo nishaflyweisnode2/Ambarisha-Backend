@@ -1,6 +1,6 @@
 const express = require("express");
 const {
-  registerUser, loginUser, allUser, registerAdmin, verifyAdmin, deleteUser, loginAdmin, logout, verifyadminlogin, getUserDetails, verifyOtp, verifyOtplogin, updateProfile, updateLocation, createSuggestedProduct, getAllSuggestedProducts, getSuggestedProductById, updateSuggestedProduct, deleteSuggestedProduct, addToRecycleBin, getRecycleBinItemsByUser, getAllRecycleBinItems, approveVoucher, deleteRecycleBinItem, createHoliday, getAllHolidays, getAllHolidaysByUserToken, updateHoliday, deleteHoliday, updateUserNotifications, deleteAccount, verifyOtpForDelete, resendOTPForDelete
+  registerUser, loginUser, allUser, registerAdmin, verifyAdmin, deleteUser, loginAdmin, logout, verifyadminlogin, socialLogin, getUserDetails, verifyOtp, verifyOtplogin, updateProfile, updateLocation, createSuggestedProduct, getAllSuggestedProducts, getSuggestedProductById, updateSuggestedProduct, deleteSuggestedProduct, addToRecycleBin, getRecycleBinItemsByUser, getAllRecycleBinItems, approveVoucher, deleteRecycleBinItem, createHoliday, getAllHolidays, getAllHolidaysByUserToken, updateHoliday, deleteHoliday, updateUserNotifications, deleteAccount, verifyOtpForDelete, resendOTPForDelete, createUserOrderIssue, getAllUserOrderIssues, getUserOrderIssueById, updateUserOrderIssue, deleteUserOrderIssue, getAllUserOrderByIssues
 } = require("../Controller/userController");
 const { upload } = require("../middleware/imageUpload");
 
@@ -15,6 +15,8 @@ router.route("/verify/otp").post(verifyOtp);
 router.route("/login").post(loginUser);
 
 router.route("/verify/login").post(verifyOtplogin);
+
+router.route("/socialLogin").post(socialLogin);
 
 router.route("/user/all").get(allUser);
 
@@ -60,6 +62,14 @@ router.put('/users/notifications', [authJwt.verifyToken], updateUserNotification
 router.delete('/user/delete-account', [authJwt.verifyToken], deleteAccount);
 router.post("/user/delete-account/:id", [authJwt.verifyToken], verifyOtpForDelete);
 router.post("/user/resendOtp/delete-account/:id", [authJwt.verifyToken], resendOTPForDelete);
+
+router.post('/user-order-issues', [authJwt.verifyToken], createUserOrderIssue);
+router.get('/user-order-issues', [authJwt.isAdmin], getAllUserOrderIssues);
+router.get('/single-user-order-issues', [authJwt.verifyToken], getAllUserOrderByIssues);
+router.get('/user-order-issues/:id', [authJwt.verifyToken], getUserOrderIssueById);
+router.put('/user-order-issues/:id', [authJwt.isAdmin], updateUserOrderIssue);
+router.delete('/user-order-issues/:id', [authJwt.verifyToken], deleteUserOrderIssue);
+
 
 
 

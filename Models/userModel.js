@@ -62,6 +62,9 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  socialType: {
+    type: String,
+  },
   wallet: {
     type: Number,
     default: 0,

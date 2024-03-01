@@ -16,6 +16,8 @@ const Plan = require('../Models/planModel');
 
 // const Cart = require("../Models/cartModel");
 const Order = require("../Models/orderModel");
+const CartMinimumPrice = require('../Models/cartMinimumPriceModel');
+
 
 // const job = schedule.scheduleJob('*/10 * * * * *', async () => {
 //   try {
@@ -203,8 +205,36 @@ exports.addToCart = async (req, res) => {
     }
 
     const subTotalAmount = cart.products.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+
+    const taxRate = await Tax.findOne({});
+    if (!taxRate) {
+      return res.status(404).json({ status: 404, message: "Tax not found" });
+    }
+
+    const taxRateDecimal = taxRate.tax / 100;
+    let taxAmount = subTotalAmount * taxRateDecimal;
+
     cart.subtotal = subTotalAmount;
-    cart.totalAmount = subTotalAmount;
+    cart.taxAmount = Math.round(taxAmount);
+    cart.totalAmount = subTotalAmount + taxAmount;
+
+    await cart.save();
+    console.log("----", cart);
+    const cartMinimumPrices = await CartMinimumPrice.findOne({});
+    if (!cartMinimumPrices) {
+      return res.status(404).json({ status: 404, message: "Cart minimum prices not found" });
+    }
+    console.log("cartMinimumPrices.minimumPrice", cartMinimumPrices.minimumPrice);
+
+    let dliveryCharge = cart.dliveryCharge
+    if (subTotalAmount <= cartMinimumPrices.minimumPrice) {
+      dliveryCharge = cartMinimumPrices.dliveryCharge;
+    } else {
+      dliveryCharge = 0;
+    }
+
+    cart.totalAmount = subTotalAmount + Math.round(taxAmount) + dliveryCharge;
+    cart.dliveryCharge = dliveryCharge;
 
     await cart.save();
 

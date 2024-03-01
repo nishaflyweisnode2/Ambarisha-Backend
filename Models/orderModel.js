@@ -44,27 +44,42 @@ const orderSchema = new mongoose.Schema(
         },
       },
     ],
+    subtotal: {
+      type: Number,
+      default: 0,
+    },
+    taxAmount: {
+      type: Number,
+      default: 0,
+    },
+    dliveryCharge: {
+      type: Number,
+      default: 0,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
     totalAmount: {
       type: String,
     },
-
     status: {
       type: String,
-      enum: ['pending','confirmed', 'accepted','rejected','picked','checked','preparing','ready to deliver' ,'rejected','delivered'],
+      enum: ['pending', 'confirmed', 'accepted', 'rejected', 'picked', 'checked', 'preparing', 'ready to deliver', 'rejected', 'delivered'],
       default: 'pending'
     },
     createdAt: {
       type: Date,
       default: Date.now,
     },
- 
+
     frequency: {
       type: String,
-      enum: ["","onetime","daily", "weekly", "weekend", "alternate"],
+      enum: ["", "onetime", "daily", "weekly", "weekend", "alternate"],
       default: "onetime",
     },
     dayOfWeek: {
-      type:  [String], 
+      type: [String],
       enum: [
         "Monday",
         "Tuesday",

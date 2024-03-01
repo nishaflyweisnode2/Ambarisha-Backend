@@ -23,6 +23,7 @@ const {
   updateProductOffer,
   deleteProductOffer,
   getAllProductsWithOffers,
+  paginateProductSearch,
 } = require("../Controller/productController");
 const authJwt = require("../middleware/authJwt");
 const {
@@ -66,6 +67,9 @@ router.put('/products/:productId/offers/:offerId', [authJwt.isAdmin], updateProd
 router.delete('/products/:productId/offers/:offerId', [authJwt.isAdmin], deleteProductOffer);
 
 router.get('/products/all/offers/product', getAllProductsWithOffers);
+
+router.get("/product/all/paginateProductSearch", paginateProductSearch);
+
 
 
 module.exports = router;

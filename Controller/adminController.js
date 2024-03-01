@@ -14,6 +14,9 @@ const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const Membership = require('../Models/memberShipModel');
 const RewardPoint = require('../Models/rewardModel');
 const ContactInformation = require('../Models/ContactusModel');
+const CartMinimumPrice = require('../Models/cartMinimumPriceModel');
+const AdminIssue = require('../Models/issueModel');
+
 
 
 
@@ -629,5 +632,122 @@ exports.deleteContactInformation = async (req, res) => {
         res.status(200).json({ message: 'Contact information deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+exports.createCartMinimumPrice = async (req, res) => {
+    try {
+        const { minimumPrice, dliveryCharge } = req.body;
+        const cartMinimumPrice = await CartMinimumPrice.create({ minimumPrice, dliveryCharge });
+        res.status(201).json({ status: 201, data: cartMinimumPrice });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ status: 500, message: error.message });
+    }
+};
+
+exports.getCartMinimumPrice = async (req, res) => {
+    try {
+        const cartMinimumPrice = await CartMinimumPrice.findOne();
+        if (!cartMinimumPrice) {
+            return res.status(404).json({ message: 'Cart minimum price not found' });
+        }
+        res.status(200).json({ status: 200, data: cartMinimumPrice });
+    } catch (error) {
+        res.status(400).json({ status: 500, message: error.message });
+    }
+};
+
+exports.updateCartMinimumPrice = async (req, res) => {
+    try {
+        const { minimumPrice, dliveryCharge } = req.body;
+        const cartMinimumPrice = await CartMinimumPrice.findOne();
+        if (!cartMinimumPrice) {
+            return res.status(404).json({ message: 'Cart minimum price not found' });
+        }
+        cartMinimumPrice.minimumPrice = minimumPrice;
+        cartMinimumPrice.dliveryCharge = dliveryCharge;
+        await cartMinimumPrice.save();
+        res.status(200).json({ status: 200, message: 'Cart minimum price updated successfully', cartMinimumPrice });
+    } catch (error) {
+        res.status(400).json({ status: 500, message: error.message });
+    }
+};
+
+exports.deleteCartMinimumPrice = async (req, res) => {
+    try {
+        const cartMinimumPrice = await CartMinimumPrice.findOne();
+        if (!cartMinimumPrice) {
+            return res.status(404).json({ message: 'Cart minimum price not found' });
+        }
+        await cartMinimumPrice.deleteOne();
+        res.status(200).json({ status: 200, message: 'Cart minimum price deleted successfully' });
+    } catch (error) {
+        res.status(400).json({ status: 500, message: error.message });
+    }
+};
+
+exports.createAdminIssue = async (req, res) => {
+    try {
+        const { title } = req.body;
+        const newIssue = new AdminIssue({ title });
+        await newIssue.save();
+        res.status(201).json({ message: 'Admin issue created successfully', issue: newIssue });
+    } catch (error) {
+        console.error('Error creating admin issue:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+exports.getAllAdminIssues = async (req, res) => {
+    try {
+        const issues = await AdminIssue.find();
+        res.status(200).json({ issues });
+    } catch (error) {
+        console.error('Error fetching admin issues:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+exports.getAdminIssueById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const issue = await AdminIssue.findById(id);
+        if (!issue) {
+            return res.status(404).json({ message: 'Admin issue not found' });
+        }
+        res.status(200).json({ issue });
+    } catch (error) {
+        console.error('Error fetching admin issue:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+exports.updateAdminIssue = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title } = req.body;
+        const updatedIssue = await AdminIssue.findByIdAndUpdate(id, { title }, { new: true });
+        if (!updatedIssue) {
+            return res.status(404).json({ message: 'Admin issue not found' });
+        }
+        res.status(200).json({ message: 'Admin issue updated successfully', issue: updatedIssue });
+    } catch (error) {
+        console.error('Error updating admin issue:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+exports.deleteAdminIssue = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedIssue = await AdminIssue.findByIdAndDelete(id);
+        if (!deletedIssue) {
+            return res.status(404).json({ message: 'Admin issue not found' });
+        }
+        res.status(200).json({ message: 'Admin issue deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting admin issue:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
