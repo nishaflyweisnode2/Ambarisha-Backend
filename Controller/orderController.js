@@ -7,32 +7,6 @@ const path = require('path');
 var multer = require("multer");
 
 
-const generateInvoicePDF1 = (order, user) => {
-  const invoicesDirectory = path.join(__dirname, 'invoices');
-
-  if (!fs.existsSync(invoicesDirectory)) {
-    fs.mkdirSync(invoicesDirectory);
-  }
-  console.log("**", order);
-  const invoicePath = path.join(invoicesDirectory, `invoice-${order._id}.pdf`);
-  const doc = new PDFDocument();
-  const stream = fs.createWriteStream(invoicePath);
-
-  doc.pipe(stream);
-
-  doc.fontSize(12);
-  doc.text(`Invoice for Order ${order._id}`, { align: 'center' });
-  doc.text(`Member-Ship Details ${order.membership.name}`, { align: 'center' });
-  doc.text(`Product Name ${order.products.name}`, { align: 'center' });
-  doc.text(`Product Unit ${order.products.unit}`, { align: 'center' });
-  doc.text(`Product Unit ${order.products.quantity}`, { align: 'center' });
-  doc.text(`Product Unit ${order.products.price}`, { align: 'center' });
-  doc.text(`Total Amount: $${order.totalAmount}`);
-
-  doc.end();
-
-  return invoicePath;
-};
 
 const generateInvoicePDF = (order, user) => {
   const PDFDocument = require('pdfkit');
@@ -125,6 +99,8 @@ exports.createOrderFromCart = async (req, res) => {
     let x = (`invoice-${order._id}.pdf`);
     console.log("x", x);
 
+    order.pdfLink = `/invoices/${x}`
+    await order.save();
 
     return res.status(201).json({ status: 201, message: "Order created successfully", data: order, invoiceDownloadLink: `/invoices/${x}`, });
   } catch (error) {
@@ -182,6 +158,7 @@ exports.myOrder = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 exports.orderStatus = async (req, res) => {
   const orderId = req.params.orderId;
   const { newStatus } = req.body;
@@ -202,6 +179,7 @@ exports.orderStatus = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 exports.getAllOrdersCategories = async (req, res) => {
   try {
     const orders = await Order.find()
@@ -229,6 +207,7 @@ exports.getAllOrdersCategories = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 exports.getOrderHistory = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -249,7 +228,6 @@ exports.getOrderHistory = async (req, res) => {
   }
 };
 
-
 exports.onetimeAll = async (req, res) => {
   try {
     const onetimeOrders = await Order.find({ frequency: "onetime" });
@@ -259,6 +237,7 @@ exports.onetimeAll = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
 };
+
 exports.dailyAll = async (req, res) => {
   try {
     const onetimeOrders = await Order.find({ frequency: "daily" });
@@ -268,6 +247,7 @@ exports.dailyAll = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
 };
+
 exports.weekendAll = async (req, res) => {
   try {
     const onetimeOrders = await Order.find({ frequency: "weekend" });
@@ -277,6 +257,7 @@ exports.weekendAll = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
 };
+
 exports.weeklyAll = async (req, res) => {
   try {
     const onetimeOrders = await Order.find({ frequency: "weekly" });
@@ -286,6 +267,7 @@ exports.weeklyAll = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
 };
+
 exports.alternateAll = async (req, res) => {
   try {
     const onetimeOrders = await Order.find({ frequency: "alternate" });
@@ -295,6 +277,7 @@ exports.alternateAll = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
 };
+
 exports.onetimeUser = async (req, res) => {
   const userId = req.user.id;
   try {
@@ -305,6 +288,7 @@ exports.onetimeUser = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
 };
+
 exports.dailyUser = async (req, res) => {
   const userId = req.user.id;
   try {
@@ -315,6 +299,7 @@ exports.dailyUser = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
 };
+
 exports.weeklyUser = async (req, res) => {
   const userId = req.user.id;
   try {
@@ -325,6 +310,7 @@ exports.weeklyUser = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
 };
+
 exports.weekendUser = async (req, res) => {
   const userId = req.user.id;
   try {
@@ -335,6 +321,7 @@ exports.weekendUser = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch onetime orders" });
   }
 };
+
 exports.alternateUser = async (req, res) => {
   const userId = req.user.id;
   try {

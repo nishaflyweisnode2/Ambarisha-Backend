@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const userOrderIssueSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Issue',
+        ref: 'User',
     },
     issueId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -24,6 +24,10 @@ const userOrderIssueSchema = new mongoose.Schema({
     ticketId: {
         type: String,
     },
+    recived: {
+        type: Boolean,
+        default: false
+    },
     poroductDemage: {
         type: Boolean,
         default: false
@@ -43,10 +47,7 @@ const userOrderIssueSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    returnImage: {
-        type: String,
-    },
-    wrongImage: {
+    image: {
         type: String,
     },
     message: {

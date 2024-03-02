@@ -21,10 +21,13 @@ const storage1 = new CloudinaryStorage({ cloudinary: cloudinary, params: { folde
 const cityImage = multer({ storage: storage1 });
 const storage2 = new CloudinaryStorage({ cloudinary: cloudinary, params: { folder: "Ambarisha-basket-Backend/productImage", allowed_formats: ["jpg", "jpeg", "png", "PNG", "xlsx", "xls", "pdf", "PDF"], }, });
 const offerImage = multer({ storage: storage2 });
+const storage3 = new CloudinaryStorage({ cloudinary: cloudinary, params: { folder: "Ambarisha-basket-Backend/orderIssueImage", allowed_formats: ["jpg", "jpeg", "png", "PNG", "xlsx", "xls", "pdf", "PDF"], }, });
+const orderIssueImage = multer({ storage: storage3 });
 
 
 module.exports = {
   upload,
   cityImage,
-  offerImage
+  offerImage,
+  orderIssueImage
 };

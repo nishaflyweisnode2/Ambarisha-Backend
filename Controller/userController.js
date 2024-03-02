@@ -763,14 +763,26 @@ exports.createUserOrderIssue = async (req, res) => {
       return res.status(404).json({ status: 404, message: "User not found" });
     }
 
-    const userOrderIssue = new UserOrderIssue({
+    let fileUrl = "";
+    if (req.file) {
+      fileUrl = req.file.path;
+    }
+
+    const userOrderIssueData = {
       userId: user._id,
       issueId,
       orderId,
-      products, // Save products array
-      ticketId: await reffralCode()
-    });
+      products,
+      ticketId: await reffralCode(),
+    };
+
+    if (fileUrl) {
+      userOrderIssueData.image = fileUrl;
+    }
+
+    const userOrderIssue = new UserOrderIssue(userOrderIssueData);
     await userOrderIssue.save();
+
     res.status(201).json({ message: 'User order issue created successfully', data: userOrderIssue });
   } catch (error) {
     console.error('Error creating user order issue:', error);
@@ -787,7 +799,7 @@ exports.getAllUserOrderByIssues = async (req, res) => {
       return res.status(404).json({ status: 404, message: "User not found" });
     }
 
-    const userOrderIssues = await UserOrderIssue.find({ userId });
+    const userOrderIssues = await UserOrderIssue.find({ userId }).populate('products.productId').populate('orderId userId issueId');
     res.status(200).json({ data: userOrderIssues });
   } catch (error) {
     console.error('Error getting user order issues:', error);
@@ -804,7 +816,7 @@ exports.getAllUserOrderIssues = async (req, res) => {
       return res.status(404).json({ status: 404, message: "User not found" });
     }
 
-    const userOrderIssues = await UserOrderIssue.find();
+    const userOrderIssues = await UserOrderIssue.find().populate('products.productId').populate('orderId userId issueId');
     res.status(200).json({ data: userOrderIssues });
   } catch (error) {
     console.error('Error getting user order issues:', error);
@@ -819,7 +831,7 @@ exports.getUserOrderIssueById = async (req, res) => {
     if (!userOrderIssue) {
       return res.status(404).json({ message: 'User order issue not found' });
     }
-    res.status(200).json({ data: userOrderIssue });
+    res.status(200).json({ data: userOrderIssue }).populate('products.productId').populate('orderId userId issueId');
   } catch (error) {
     console.error('Error getting user order issue by ID:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -827,6 +839,28 @@ exports.getUserOrderIssueById = async (req, res) => {
 };
 
 exports.updateUserOrderIssue = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+
+    const userOrderIssue = await UserOrderIssue.findByIdAndUpdate(id, updateData, { new: true });
+    if (!userOrderIssue) {
+      return res.status(404).json({ message: 'User order issue not found' });
+    }
+    res.status(200).json({ message: 'User order issue updated successfully', data: userOrderIssue });
+  } catch (error) {
+    console.error('Error updating user order issue:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.revokeIssue = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;

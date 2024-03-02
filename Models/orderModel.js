@@ -72,7 +72,9 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-
+    pdfLink: {
+      type: String
+    },
     frequency: {
       type: String,
       enum: ["", "onetime", "daily", "weekly", "weekend", "alternate"],
