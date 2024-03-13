@@ -11,6 +11,8 @@ router.get('/user-memberships/byUser', [authJwt.verifyToken], userMembershipCont
 router.get('/user-memberships/:id', userMembershipController.getUserMembershipById);
 router.put('/user-memberships/:id', [authJwt.verifyToken], userMembershipController.updateUserMembershipById);
 router.delete('/user-memberships/:id', [authJwt.verifyToken], userMembershipController.deleteUserMembershipById);
+router.post('/user-wallet/apply-wallet', [authJwt.verifyToken], userMembershipController.applyWalletToUserMembership);
+
 
 
 module.exports = router;

@@ -13,6 +13,38 @@ exports.createUserMembership = async (req, res) => {
             res.status(404).send({ status: 404, message: "user not found ", data: {}, });
         }
 
+        await UserMembership.updateMany(
+            { userId: user._id, endDate: { $lt: new Date() } },
+            { $set: { isActive: false } }
+        );
+
+        const existingMembership = await UserMembership.findOne({
+            userId: user._id,
+            endDate: { $gte: new Date() }
+        });
+
+        if (existingMembership) {
+            return res.status(400).json({ status: 400, message: 'User already has an active membership' });
+        }
+
+        const registrationDate = user.createdAt;
+        const currentDate = new Date();
+        const daysSinceRegistration = Math.floor((currentDate - registrationDate) / (1000 * 60 * 60 * 24));
+        console.log("daysSinceRegistration", daysSinceRegistration);
+
+        if (promoCode && daysSinceRegistration > 48) {
+            return res.status(400).json({ status: 400, message: 'Promo code expired' });
+        }
+
+        const usedPromoCodes = await UserMembership.find({
+            userId: user._id,
+            promoCode: promoCode
+        });
+
+        if (usedPromoCodes.length > 0) {
+            return res.status(400).json({ status: 400, message: 'Promo code already used' });
+        }
+
         const membership = await Membership.findById(membershipId);
         if (!membership) {
             return res.status(404).json({ success: false, message: 'Membership not found' });
@@ -55,7 +87,7 @@ exports.createUserMembership = async (req, res) => {
 
 exports.getAllUserMemberships = async (req, res) => {
     try {
-        const userMemberships = await UserMembership.find();
+        const userMemberships = await UserMembership.find().populate('userId membershipId');
 
         res.status(200).json({ data: userMemberships });
     } catch (error) {
@@ -71,7 +103,7 @@ exports.getAllUserMembershipsByToken = async (req, res) => {
             res.status(404).send({ status: 404, message: "user not found ", data: {}, });
         }
         console.log(req.user._id);
-        const userMemberships = await UserMembership.findOne({ userId: user._id });
+        const userMemberships = await UserMembership.findOne({ userId: user._id, isActive: true }).populate('userId membershipId');
 
         res.status(200).json({ status: 200, data: userMemberships });
     } catch (error) {
@@ -128,5 +160,52 @@ exports.deleteUserMembershipById = async (req, res) => {
     } catch (error) {
         console.error('Error deleting user membership:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+exports.applyWalletToUserMembership = async (req, res) => {
+    try {
+        const { userMembershipId } = req.body;
+        const userId = req.user.id;
+        console.log(userId);
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ status: 404, message: 'User not found', data: null });
+        }
+
+        const membership = await UserMembership.findById(userMembershipId);
+        if (!membership) {
+            return res.status(404).json({ message: 'Membership not found' });
+        }
+
+        if (membership.paymentMethod === 'Price') {
+            if (membership.isWalletUsed) {
+                return res.status(400).json({ status: 400, message: 'Wallet has already been applied to this User Membership', data: null });
+            }
+
+            if (user.wallet <= 0) {
+                return res.status(400).json({ status: 400, message: 'Insufficient wallet balance', data: null });
+            }
+
+            if (user.wallet < membership.pricePaid) {
+                return res.status(400).json({ status: 400, message: 'Insufficient wallet balance', data: null });
+            }
+
+            const walletAmountToUse = membership.pricePaid;
+            user.wallet -= walletAmountToUse;
+            await user.save();
+
+            membership.walletAmount = walletAmountToUse;
+            membership.isWalletUsed = true;
+
+            await membership.save();
+            return res.status(200).json({ status: 200, message: 'Wallet applied successfully', data: membership });
+        } else {
+            return res.status(400).json({ status: 400, message: 'Wallet not applied you use promocode' });
+        }
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, message: 'Server error', data: null });
     }
 };

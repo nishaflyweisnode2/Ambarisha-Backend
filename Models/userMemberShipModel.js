@@ -29,6 +29,13 @@ const userMembershipSchema = new mongoose.Schema({
     pricePaid: {
         type: Number,
     },
+    walletAmount: {
+        type: Number,
+    },
+    isWalletUsed: {
+        type: Boolean,
+        default: false,
+    },
     status: {
         type: String,
         enum: ['Pending', 'Completed', 'Failed'],

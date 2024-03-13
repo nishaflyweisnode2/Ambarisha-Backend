@@ -1,4 +1,4 @@
-const userSubscription = require('../Models/userSubscriptionModel');
+const UserSubscription = require('../Models/userSubscriptionModel');
 const User = require('../Models/userModel');
 const Product = require("../Models/productModel");
 const Plan = require('../Models/planModel');
@@ -13,6 +13,19 @@ exports.createSubscription = async (req, res) => {
         const user = await User.findById(req.user._id);
         if (!user) {
             res.status(404).send({ status: 404, message: "user not found ", data: {}, });
+        }
+
+        const existingSubscription = await UserSubscription.findOne({
+            userId: user._id,
+            subId: subId,
+            productId: productId,
+            planId: planId,
+            startDate: startDate,
+            endDate: endDate
+        });
+
+        if (existingSubscription) {
+            return res.status(400).json({ status: 400, message: 'Subscription already exists for this user', data: existingSubscription });
         }
 
         const checkSubscription = await Subs.findById(subId);
@@ -30,7 +43,7 @@ exports.createSubscription = async (req, res) => {
             return res.status(404).json({ status: 404, message: "Plan not found" });
         }
 
-        const subscription = new userSubscription({
+        const subscription = new UserSubscription({
             subId,
             productId,
             planId,
@@ -59,20 +72,22 @@ exports.createSubscription = async (req, res) => {
 
 exports.getSubscription = async (req, res) => {
     try {
-        const data = await userSubscription.find()/*.populate('subId')*/;
-        res.status(200).json({
+        const subs = await UserSubscription.find();
+        console.log("11111");
+        return res.status(200).json({
             status: 200,
-            subs: data,
+            data: subs,
         });
     } catch (err) {
-        res.status(400).send({ mesage: err.mesage });
+        console.log(err);
+        return res.status(400).send({ mesage: err.mesage });
     }
 };
 
 exports.getUserSubscription = async (req, res) => {
     try {
         console.log(req.user._id);
-        const data = await userSubscription.find({ userId: req.user._id })/*.populate('subId productId planId userId')*/;
+        const data = await UserSubscription.find({ userId: req.user._id });
         res.status(200).json({
             status: 200,
             subs: data,
@@ -85,7 +100,7 @@ exports.getUserSubscription = async (req, res) => {
 exports.getSubscriptionById = async (req, res) => {
     try {
         const subscriptionId = req.params.subscriptionId;
-        const subscription = await userSubscription.findById(subscriptionId);
+        const subscription = await UserSubscription.findById(subscriptionId);
         if (!subscription) {
             return res.status(404).json({ status: 404, message: 'Subscription not found' });
         }
@@ -122,7 +137,7 @@ exports.updateSubscription = async (req, res) => {
             }
         }
 
-        const updatedSubscription = await userSubscription.findByIdAndUpdate(subscriptionId, updates, { new: true });
+        const updatedSubscription = await UserSubscription.findByIdAndUpdate(subscriptionId, updates, { new: true });
 
         if (!updatedSubscription) {
             return res.status(404).json({
@@ -150,7 +165,7 @@ exports.deleteSubscription = async (req, res) => {
     try {
         const { subscriptionId } = req.params;
 
-        const find = await userSubscription.findByIdAndDelete(subscriptionId);
+        const find = await UserSubscription.findByIdAndDelete(subscriptionId);
         if (!find) {
             return res.status(404).json({
                 status: 404,
