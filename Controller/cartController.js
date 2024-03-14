@@ -173,6 +173,64 @@ exports.AddCart1 = async (req, res) => {
   }
 };
 
+const checkSubscriptionsAndAddToCart = async () => {
+  try {
+    console.log('Entry');
+
+    const currentDate = new Date();
+
+    const subscriptions = await userSubscription.find({
+      $or: [
+        { isSubscription: true },
+        { endDate: { $lt: currentDate } }
+      ]
+    });
+
+    for (const subscription of subscriptions) {
+      const { productId, quantity: subscriptionQuantity } = subscription;
+
+      const product = await Product.findById(productId);
+      if (!product) {
+        console.error(`Product with ID ${productId} not found`);
+        continue;
+      }
+
+      const quantityToAdd = Math.min(product.quantity, subscriptionQuantity);
+
+      const userId = subscription.userId;
+      let cart = await Cart.findOne({ userId });
+      if (!cart) {
+        cart = new Cart({ userId, products: [] });
+      }
+
+      const existingProduct = cart.products.find(item => item.productId.equals(productId));
+
+      if (existingProduct) {
+        existingProduct.quantity += quantityToAdd;
+      } else {
+        const price = product.isDiscountActive ? product.discountPrice : product.originalPrice;
+        cart.products.push({ productId, price, quantity: quantityToAdd });
+      }
+
+      await cart.save();
+    }
+    console.log('Exist');
+
+    console.log('Products added to cart for subscriptions successfully');
+  } catch (error) {
+    console.error('Error checking subscriptions and adding to cart:', error);
+  }
+};
+
+
+// Schedule the cron job to run every day at 12 PM
+// cron.schedule('0 12 * * *', () => {
+cron.schedule('* * * * *', () => {
+  console.log('Running cron job to check subscriptions and add to cart');
+  checkSubscriptionsAndAddToCart();
+});
+
+
 exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;

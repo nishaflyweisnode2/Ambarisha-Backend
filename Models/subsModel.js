@@ -3,11 +3,11 @@ const mongoose = require("mongoose");
 const subsSchema = mongoose.Schema({
     productId: {
         type: mongoose.Schema.ObjectId,
-        ref: " Product",
+        ref: "Product",
     },
     planId: {
         type: mongoose.Schema.ObjectId,
-        ref: " Plan",
+        ref: "Plan",
     },
     weight: {
         type: String,

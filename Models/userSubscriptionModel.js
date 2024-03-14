@@ -3,19 +3,19 @@ const mongoose = require("mongoose");
 const subsSchema = mongoose.Schema({
     subId: {
         type: mongoose.Schema.ObjectId,
-        ref: " subs",
+        ref: "subs",
     },
     productId: {
         type: mongoose.Schema.ObjectId,
-        ref: " Product",
+        ref: "Product",
     },
     planId: {
         type: mongoose.Schema.ObjectId,
-        ref: " Plan",
+        ref: "Plan",
     },
     userId: {
         type: mongoose.Schema.ObjectId,
-        ref: " User",
+        ref: "User",
     },
     quantity: {
         type: Number,

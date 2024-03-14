@@ -8,12 +8,17 @@ const Subs = require("../Models/subsModel");
 
 exports.createSubscription = async (req, res) => {
     try {
-        const { subId, productId, planId, quantity, startDate, endDate } = req.body;
+        const { subId, productId, planId, quantity, startDate, endDate, isSubscription } = req.body;
 
         const user = await User.findById(req.user._id);
         if (!user) {
             res.status(404).send({ status: 404, message: "user not found ", data: {}, });
         }
+
+        await UserSubscription.updateMany(
+            { userId: user._id, endDate: { $lt: new Date() } },
+            { $set: { isSubscription: false } }
+        );
 
         const existingSubscription = await UserSubscription.findOne({
             userId: user._id,
@@ -21,7 +26,7 @@ exports.createSubscription = async (req, res) => {
             productId: productId,
             planId: planId,
             startDate: startDate,
-            endDate: endDate
+            endDate: endDate,
         });
 
         if (existingSubscription) {
@@ -50,7 +55,8 @@ exports.createSubscription = async (req, res) => {
             userId: user._id,
             quantity,
             startDate,
-            endDate
+            endDate,
+            isSubscription
         });
 
         const newSubscription = await subscription.save();
@@ -72,8 +78,7 @@ exports.createSubscription = async (req, res) => {
 
 exports.getSubscription = async (req, res) => {
     try {
-        const subs = await UserSubscription.find();
-        console.log("11111");
+        const subs = await UserSubscription.find().populate('productId planId subId userId');
         return res.status(200).json({
             status: 200,
             data: subs,
@@ -87,7 +92,7 @@ exports.getSubscription = async (req, res) => {
 exports.getUserSubscription = async (req, res) => {
     try {
         console.log(req.user._id);
-        const data = await UserSubscription.find({ userId: req.user._id });
+        const data = await UserSubscription.find({ userId: req.user._id }).populate('productId planId subId userId');
         res.status(200).json({
             status: 200,
             subs: data,
@@ -100,7 +105,7 @@ exports.getUserSubscription = async (req, res) => {
 exports.getSubscriptionById = async (req, res) => {
     try {
         const subscriptionId = req.params.subscriptionId;
-        const subscription = await UserSubscription.findById(subscriptionId);
+        const subscription = await UserSubscription.findById(subscriptionId).populate('productId planId subId userId');
         if (!subscription) {
             return res.status(404).json({ status: 404, message: 'Subscription not found' });
         }
