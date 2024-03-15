@@ -178,7 +178,7 @@ const checkSubscriptionsAndAddToCart = async () => {
     console.log('Entry');
 
     const currentDate = new Date();
-
+    console.log("currentDate", currentDate);
     const subscriptions = await userSubscription.find({
       $or: [
         { isSubscription: true },
@@ -198,7 +198,7 @@ const checkSubscriptionsAndAddToCart = async () => {
       const quantityToAdd = Math.min(product.quantity, subscriptionQuantity);
 
       const userId = subscription.userId;
-      let cart = await Cart.findOne({ userId });
+      let cart = await Cart.findOne({ userId: userId, createdAt: currentDate });
       if (!cart) {
         cart = new Cart({ userId, products: [] });
       }
