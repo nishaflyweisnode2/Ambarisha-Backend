@@ -179,15 +179,19 @@ const checkSubscriptionsAndAddToCart = async () => {
 
     const currentDate = new Date();
     console.log("currentDate", currentDate);
+    const currentDateString = currentDate.toISOString().split('T')[0];
+    console.log("currentDateString", currentDateString);
+
     const subscriptions = await userSubscription.find({
       $or: [
         { isSubscription: true },
         { endDate: { $lt: currentDate } }
       ]
     });
+    console.log("subscriptions", subscriptions);
 
     for (const subscription of subscriptions) {
-      const { productId, quantity: subscriptionQuantity } = subscription;
+      const { productId, quantity: subscriptionQuantity, startDate, endDate } = subscription;
 
       const product = await Product.findById(productId);
       if (!product) {
@@ -195,21 +199,63 @@ const checkSubscriptionsAndAddToCart = async () => {
         continue;
       }
 
-      const quantityToAdd = Math.min(product.quantity, subscriptionQuantity);
-
       const userId = subscription.userId;
-      let cart = await Cart.findOne({ userId: userId, createdAt: currentDate });
+      let cart = await Cart.findOne({
+        userId: userId,
+        createdAt: {
+          $gte: new Date(currentDateString),
+          $lt: new Date(currentDateString + 'T23:59:59.999Z')
+        }
+      });
       if (!cart) {
-        cart = new Cart({ userId, products: [] });
+        cart = new Cart({ userId, products: [], startDate, endDate });
       }
 
-      const existingProduct = cart.products.find(item => item.productId.equals(productId));
+      const existingProductIndex = cart.products.findIndex(item => item.productId.equals(productId));
 
-      if (existingProduct) {
-        existingProduct.quantity += quantityToAdd;
+      if (existingProductIndex !== -1) {
+        continue;
+      }
+
+      const price = product.isDiscountActive ? product.discountPrice : product.originalPrice;
+      cart.products.push({ productId, price, quantity: subscriptionQuantity });
+
+
+      const subTotalAmount = cart.products.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+
+      const taxRate = await Tax.findOne({});
+      if (!taxRate) {
+        console.error('Tax not found');
+        continue;
+      }
+
+      const taxRateDecimal = taxRate.tax / 100;
+      let taxAmount = subTotalAmount * taxRateDecimal;
+
+      cart.subtotal = subTotalAmount;
+      cart.taxAmount = Math.round(taxAmount);
+      cart.totalAmount = subTotalAmount + taxAmount;
+
+      const cartMinimumPrices = await CartMinimumPrice.findOne({});
+      if (!cartMinimumPrices) {
+        console.error('Cart minimum prices not found');
+        continue;
+      }
+
+      let deliveryCharge = cart.dliveryCharge;
+      if (subTotalAmount <= cartMinimumPrices.minimumPrice) {
+        deliveryCharge = cartMinimumPrices.dliveryCharge;
       } else {
-        const price = product.isDiscountActive ? product.discountPrice : product.originalPrice;
-        cart.products.push({ productId, price, quantity: quantityToAdd });
+        deliveryCharge = 0;
+      }
+
+      cart.totalAmount += deliveryCharge;
+      cart.dliveryCharge = deliveryCharge;
+
+      const membership = await UserMembership.findOne({ userId: userId, isActive: true, status: 'Completed' });
+      if (membership) {
+        cart.membership = membership.membershipId;
+        cart.userMembership = membership._id;
       }
 
       await cart.save();
@@ -224,8 +270,8 @@ const checkSubscriptionsAndAddToCart = async () => {
 
 
 // Schedule the cron job to run every day at 12 PM
-// cron.schedule('0 12 * * *', () => {
-cron.schedule('* * * * *', () => {
+cron.schedule('0 12 * * *', () => {
+// cron.schedule('* * * * *', () => {
   console.log('Running cron job to check subscriptions and add to cart');
   checkSubscriptionsAndAddToCart();
 });

@@ -79,6 +79,12 @@ const cartSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    startDate: {
+      type: Date,
+    },
+    endDate: {
+      type: Date,
+    },
   },
 
   { timestamps: true, strictPopulate: false }

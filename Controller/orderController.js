@@ -5,6 +5,10 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 var multer = require("multer");
+const cron = require('node-cron');
+const schedule = require('node-schedule');
+
+
 
 
 
@@ -52,6 +56,72 @@ const generateInvoicePDF = (order, user) => {
   return invoicePath;
 };
 
+const createOrdersFromCartsAuto = async () => {
+  try {
+    console.log('Creating orders from carts...');
+
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 1);
+    console.log("endDate", endDate);
+    const carts = await Cart.find({
+      createdAt: { $gte: startDate, $lte: endDate }
+    }).populate('products.productId');
+
+    for (const cart of carts) {
+      const { userId } = cart;
+      const user = await User.findById(userId);
+
+      if (!user) {
+        console.error(`User with ID ${userId} not found`);
+        continue;
+      }
+
+      if (!cart || !cart.products.length) {
+        console.error(`Cart for user ${userId} is empty`);
+        continue;
+      }
+
+      const order = new Order({
+        user: userId,
+        address: cart.address,
+        membership: cart.membership,
+        userMembership: cart.userMembership,
+        plan: cart.plan,
+        subscription: cart.subscription,
+        userSubscription: cart.userSubscription,
+        products: cart.products.map(item => ({
+          productId: item.productId._id,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        subtotal: cart.subtotal,
+        taxAmount: cart.taxAmount,
+        dliveryCharge: cart.dliveryCharge,
+        discountAmount: cart.discountAmount,
+        totalAmount: cart.totalAmount,
+        startDate: cart.startDate,
+        endDate: cart.endDate
+      });
+
+      await order.save();
+      await Cart.findByIdAndDelete(cart._id);
+
+      console.log(`Order created for user ${userId}`);
+    }
+
+    console.log('Orders created from carts successfully');
+  } catch (error) {
+    console.error('Error creating orders from carts:', error);
+  }
+};
+
+// Schedule the cron job to run every day at 12 PM
+// cron.schedule('0 12 * * *', () => {
+cron.schedule('* * * * *', () => {
+  console.log('Running cron job to check Order create by cart sucessfully ');
+  createOrdersFromCartsAuto();
+});
 
 exports.createOrderFromCart = async (req, res) => {
   try {
