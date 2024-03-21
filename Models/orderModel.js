@@ -61,7 +61,7 @@ const orderSchema = new mongoose.Schema(
       default: 0,
     },
     totalAmount: {
-      type: String,
+      type: Number,
     },
     status: {
       type: String,
@@ -78,25 +78,25 @@ const orderSchema = new mongoose.Schema(
     frequency: {
       type: String,
       enum: ["", "onetime", "daily", "weekly", "weekend", "alternate"],
-      default: "onetime",
+      // default: "onetime",
     },
-    dayOfWeek: {
-      type: [String],
-      enum: [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday",
-      ],
-    },
-    specificDates: [
-      {
-        type: Date,
-      },
-    ],
+    // dayOfWeek: {
+    //   type: [String],
+    //   enum: [
+    //     "Monday",
+    //     "Tuesday",
+    //     "Wednesday",
+    //     "Thursday",
+    //     "Friday",
+    //     "Saturday",
+    //     "Sunday",
+    //   ],
+    // },
+    // specificDates: [
+    //   {
+    //     type: Date,
+    //   },
+    // ],
     startDate: {
       type: Date,
     },

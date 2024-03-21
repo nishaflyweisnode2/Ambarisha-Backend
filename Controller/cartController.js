@@ -271,7 +271,7 @@ const checkSubscriptionsAndAddToCart = async () => {
 
 // Schedule the cron job to run every day at 12 PM
 cron.schedule('0 12 * * *', () => {
-// cron.schedule('* * * * *', () => {
+  // cron.schedule('* * * * *', () => {
   console.log('Running cron job to check subscriptions and add to cart');
   checkSubscriptionsAndAddToCart();
 });
@@ -525,10 +525,17 @@ exports.applyCoupon = async (req, res) => {
       return res.status(404).json({ status: 404, message: "Coupon not found" });
     }
 
-    cart.subtotal -= coupon.discount;
+    cart.subtotal = cart.subtotal || 0;
+    cart.taxAmount = cart.taxAmount || 0;
+    cart.deliveryCharge = cart.deliveryCharge || 0;
+
+    const discountAmount = (cart.subtotal * coupon.discount) / 100;
+
+    const totalAmount = cart.subtotal - discountAmount + cart.taxAmount + cart.deliveryCharge;
+
     cart.couponCode = coupon.code;
-    cart.couponDiscount = coupon.discount;
-    cart.totalAmount = cart.subtotal;
+    cart.couponDiscount = discountAmount;
+    cart.totalAmount = totalAmount;
 
     await cart.save();
 
@@ -553,10 +560,19 @@ exports.removeCoupon = async (req, res) => {
       return res.status(404).json({ status: 404, message: "Cart not found" });
     }
 
+    // Ensure that all necessary fields are initialized
+    cart.subtotal = cart.subtotal || 0;
+    cart.taxAmount = cart.taxAmount || 0;
+    cart.deliveryCharge = cart.deliveryCharge || 0;
+
+    // Restore the original total amount by adding the coupon discount back
+    const totalAmount = cart.subtotal + cart.couponDiscount + cart.taxAmount + cart.deliveryCharge;
+
+    // Remove coupon details from the cart
     cart.subtotal += cart.couponDiscount;
     cart.couponCode = "";
     cart.couponDiscount = 0;
-    cart.totalAmount = cart.subtotal;
+    cart.totalAmount = totalAmount;
 
     await cart.save();
 

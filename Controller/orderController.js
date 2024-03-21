@@ -64,13 +64,19 @@ const createOrdersFromCartsAuto = async () => {
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + 1);
     console.log("endDate", endDate);
-    const carts = await Cart.find({
-      createdAt: { $gte: startDate, $lte: endDate }
+    // let carts = await Cart.find({
+    //   createdAt: { $gte: startDate, /*$lte: endDate*/ }
+    // }).populate('products.productId');
+    // console.log("carts", carts);
+
+    let carts = await Cart.find({
     }).populate('products.productId');
+    console.log("carts", carts);
 
     for (const cart of carts) {
       const { userId } = cart;
       const user = await User.findById(userId);
+      console.log("cart", cart);
 
       if (!user) {
         console.error(`User with ID ${userId} not found`);
@@ -82,8 +88,21 @@ const createOrdersFromCartsAuto = async () => {
         continue;
       }
 
-      const order = new Order({
-        user: userId,
+      const existingOrder = await Order.findOne({
+        user: cart.userId,
+        createdAt: {
+          // $gte: new Date(startDate),
+          $lte: endDate
+        }
+      });
+
+      if (existingOrder) {
+        console.log(`Order already exists for user ${userId} on ${startDate.toDateString()}`);
+        continue;
+      }
+
+      let order = new Order({
+        user: cart.userId,
         address: cart.address,
         membership: cart.membership,
         userMembership: cart.userMembership,
@@ -103,9 +122,20 @@ const createOrdersFromCartsAuto = async () => {
         startDate: cart.startDate,
         endDate: cart.endDate
       });
+      console.log("order", order);
 
       await order.save();
       await Cart.findByIdAndDelete(cart._id);
+
+      order = await Order.findById(order._id).populate("products.productId").populate('plan subscription userSubscription userMembership membership');
+
+      const invoicePath = generateInvoicePDF(order, user)
+      console.log("invoicePath", invoicePath);
+      let x = (`invoice-${order._id}.pdf`);
+      console.log("x", x);
+
+      order.pdfLink = `/invoices/${x}`
+      await order.save();
 
       console.log(`Order created for user ${userId}`);
     }
@@ -117,8 +147,8 @@ const createOrdersFromCartsAuto = async () => {
 };
 
 // Schedule the cron job to run every day at 12 PM
-// cron.schedule('0 12 * * *', () => {
-cron.schedule('* * * * *', () => {
+cron.schedule('0 12 * * *', () => {
+  // cron.schedule('* * * * *', () => {
   console.log('Running cron job to check Order create by cart sucessfully ');
   createOrdersFromCartsAuto();
 });
