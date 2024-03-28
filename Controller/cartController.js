@@ -120,7 +120,7 @@ exports.AddCart1 = async (req, res) => {
             price: productPrice,
           });
         }
-        console.log("isDiscountActive:", dbProduct.discountActive);
+        console.log("discountActive:", dbProduct.discountActive);
         console.log("originalPrice:", dbProduct.originalPrice);
         console.log("discountPrice:", dbProduct.discountPrice);
       }
@@ -148,7 +148,7 @@ exports.AddCart1 = async (req, res) => {
           quantity,
           price: productPrice,
         });
-        console.log("isDiscountActive:", dbProduct.discountActive);
+        console.log("discountActive:", dbProduct.discountActive);
         console.log("originalPrice:", dbProduct.originalPrice);
         console.log("discountPrice:", dbProduct.discountPrice);
       }
@@ -217,7 +217,7 @@ const checkSubscriptionsAndAddToCart = async () => {
         continue;
       }
 
-      const price = product.isDiscountActive ? product.discountPrice : product.originalPrice;
+      const price = product.discountActive ? product.discountPrice : product.originalPrice;
       cart.products.push({ productId, price, quantity: subscriptionQuantity });
 
 
@@ -292,7 +292,7 @@ exports.addToCart = async (req, res) => {
       return res.status(404).json({ status: 404, message: "Product not found" });
     }
 
-    const price = product.isDiscountActive ? product.discountPrice : product.originalPrice;
+    const price = product.discountActive ? product.discountPrice : product.originalPrice;
 
     let cart = await Cart.findOne({ userId });
 
