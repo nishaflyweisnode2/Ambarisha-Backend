@@ -270,8 +270,8 @@ const checkSubscriptionsAndAddToCart = async () => {
 
 
 // Schedule the cron job to run every day at 12 PM
-cron.schedule('0 12 * * *', () => {
-  // cron.schedule('* * * * *', () => {
+cron.schedule('0 11 * * *', () => {
+// cron.schedule('* * * * *', () => {
   console.log('Running cron job to check subscriptions and add to cart');
   checkSubscriptionsAndAddToCart();
 });
@@ -293,6 +293,14 @@ exports.addToCart = async (req, res) => {
     }
 
     const price = product.discountActive ? product.discountPrice : product.originalPrice;
+
+    const walletAmount = user.wallet;
+    console.log(walletAmount);
+    const totalCost = price * quantity;
+
+    if (walletAmount < totalCost) {
+      return res.status(400).json({ status: 400, message: "Insufficient funds in wallet" });
+    }
 
     let cart = await Cart.findOne({ userId });
 
