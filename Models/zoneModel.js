@@ -1,14 +1,14 @@
 const mongoose = require("mongoose");
 
 const ZoneSchema = new mongoose.Schema({
-  categoryId: {
+  categoryId: [{
     type: mongoose.Schema.ObjectId,
-    ref: " Category",
-  },
-  productId: {
+    ref: "Category",
+  }],
+  productId: [{
     type: mongoose.Schema.ObjectId,
-    ref: " Product",
-  },
+    ref: "Product",
+  }],
   name: {
     type: String,
   },

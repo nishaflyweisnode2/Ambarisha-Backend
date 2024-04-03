@@ -35,22 +35,17 @@ exports.createZone = async (req, res) => {
         return res.status(409).json({ message: "Zone already exists.", status: 409, data: {} });
       }
 
-      const category = await Category.findById(req.body.categoryId);
+      const categoryIds = req.body.categoryId || [];
+      const categories = await Category.find({ _id: { $in: categoryIds } });
 
-      if (!category) {
-        return res.status(404).json({ message: "Category not found.", status: 404, data: {} });
-      }
-
-      const product = await Product.findById(req.body.productId);
-      if (!product) {
-        return res.status(404).json({ message: "Product not found.", status: 404, data: {} });
-      }
+      const productIds = req.body.productId || [];
+      const products = await Product.find({ _id: { $in: productIds } });
 
       const fileUrl = req.file ? req.file.path : "";
       const data = {
         name: req.body.name,
-        categoryId: req.body.categoryId,
-        productId: req.body.productId,
+        categoryId: categories.map(category => category._id),
+        productId: products.map(product => product._id),
         code: req.body.code,
         type: req.body.type,
         image: fileUrl
@@ -66,8 +61,8 @@ exports.createZone = async (req, res) => {
 
 
 exports.getZone = async (req, res) => {
-  const zone = await Zone.find({});
-  res.status(201).json({ success: true, zone, });
+  const zone = await Zone.find({}).populate('categoryId').populate('productId');
+  return res.status(201).json({ success: true, zone, });
 };
 
 exports.updateZone = async (req, res) => {
@@ -86,8 +81,14 @@ exports.updateZone = async (req, res) => {
       const fileUrl = req.file ? req.file.path : "";
       if (req.file) zone.image = fileUrl;
       if (req.body.name) zone.name = req.body.name;
-      if (req.body.categoryId) zone.categoryId = req.body.categoryId;
-      if (req.body.productId) zone.productId = req.body.productId;
+      if (req.body.categoryIds) {
+        const categoryIds = req.body.categoryIds.split(',');
+        zone.categoryId = categoryIds;
+      }
+      if (req.body.productIds) {
+        const productIds = req.body.productIds.split(',');
+        zone.productId = productIds;
+      }
       if (req.body.code) zone.code = req.body.code;
       if (req.body.type) zone.type = req.body.type;
 

@@ -1,6 +1,6 @@
 const express = require("express");
 const {
-  registerUser, loginUser, allUser, registerAdmin, verifyAdmin, deleteUser, loginAdmin, logout, verifyadminlogin, socialLogin, getUserDetails, verifyOtp, verifyOtplogin, updateProfile, updateLocation, createSuggestedProduct, getAllSuggestedProducts, getSuggestedProductById, updateSuggestedProduct, deleteSuggestedProduct, addToRecycleBin, getRecycleBinItemsByUser, getAllRecycleBinItems, approveVoucher, deleteRecycleBinItem, createHoliday, getAllHolidays, getAllHolidaysByUserToken, updateHoliday, deleteHoliday, updateUserNotifications, deleteAccount, verifyOtpForDelete, resendOTPForDelete, createUserOrderIssue, getAllUserOrderIssues, getUserOrderIssueById, updateUserOrderIssue, deleteUserOrderIssue, getAllUserOrderByIssues, revokeIssue
+  registerUser, loginUser, allUser, registerAdmin, verifyAdmin, deleteUser, loginAdmin, logout, verifyadminlogin, socialLogin, getUserDetails, verifyOtp, verifyOtplogin, updateProfile, updateLocation, createSuggestedProduct, getAllSuggestedProducts, getSuggestedProductById, updateSuggestedProduct, deleteSuggestedProduct, addToRecycleBin, getRecycleBinItemsByUser, getAllRecycleBinItems, approveVoucher, deleteRecycleBinItem, createHoliday, getAllHolidays, getAllHolidaysByUserToken, updateHoliday, deleteHoliday, updateUserNotifications, deleteAccount, verifyOtpForDelete, resendOTPForDelete, createUserOrderIssue, getAllUserOrderIssues, getUserOrderIssueById, updateUserOrderIssue, deleteUserOrderIssue, getAllUserOrderByIssues, revokeIssue, resendOTP
 } = require("../Controller/userController");
 const { upload, orderIssueImage } = require("../middleware/imageUpload");
 
@@ -11,6 +11,8 @@ const router = express.Router();
 router.route("/register").post(registerUser);
 
 router.route("/verify/otp").post(verifyOtp);
+
+router.post("/resendOtp/:id", resendOTP);
 
 router.route("/login").post(loginUser);
 

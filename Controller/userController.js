@@ -140,6 +140,29 @@ exports.loginUser = async (req, res) => {
   }
 };
 
+exports.resendOTP = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findOne({ _id: id, userType: "USER" });
+    if (!user) {
+      return res.status(404).send({ status: 404, message: "User not found" });
+    }
+    const otp = newOTP.generate(4, { alphabets: false, upperCase: false, specialChar: false, });
+    const otpExpiration = new Date(Date.now() + 5 * 60 * 1000);
+    const accountVerification = false;
+    const updated = await User.findOneAndUpdate({ _id: user._id }, { otp, otpExpiration, accountVerification }, { new: true });
+    let obj = {
+      id: updated._id,
+      otp: updated.otp,
+      mobileNumber: updated.mobileNumber
+    }
+    return res.status(200).send({ status: 200, message: "OTP resent", data: obj });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ status: 500, message: "Server error" + error.message });
+  }
+};
+
 exports.verifyOtplogin = async (req, res) => {
   try {
     const { mobileNumber, otp } = req.body;
