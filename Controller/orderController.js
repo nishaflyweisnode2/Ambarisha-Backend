@@ -413,6 +413,14 @@ exports.createOrderFromCart = async (req, res) => {
 
     await order.save();
 
+    let walletAmount = user.wallet;
+    console.log('Initial wallet amount:', walletAmount);
+    console.log('Cart total amount:', cart.totalAmount);
+
+    user.wallet -= cart.totalAmount;
+    await user.save();
+    console.log('Updated wallet amount after deduction:', user.wallet);
+
     await Cart.findByIdAndDelete(cart._id);
 
     order = await Order.findById(order._id).populate("products.productId").populate('plan subscription userSubscription userMembership membership');
