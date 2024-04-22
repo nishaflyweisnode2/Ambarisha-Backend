@@ -102,7 +102,7 @@ const generateInvoicePDF1 = async (order, user) => {
             status: order.status,
             paymentStatus: order.paymentStatus,
             tax: order.taxAmount,
-            dliveryCharge: order.dliveryCharge,
+            deliveryCharge: order.deliveryCharge,
             subtotal: order.subtotal,
             total: order.totalAmount,
           }
@@ -119,7 +119,7 @@ const generateInvoicePDF1 = async (order, user) => {
         status: order.status,
         paymentStatus: order.paymentStatus,
         tax: order.taxAmount,
-        dliveryCharge: order.dliveryCharge,
+        deliveryCharge: order.deliveryCharge,
         subtotal: order.subtotal,
         total: order.totalAmount,
       }
@@ -183,7 +183,7 @@ const generateInvoicePDF1 = async (order, user) => {
         { label: "ProductUnit", property: 'ProductUnit', width: 70, renderer: null },
         { label: "Quantity", property: 'Quantity', width: 70, renderer: null },
         { label: "Status", property: 'status', width: 70, renderer: null },
-        { label: "DliveryCharge", property: 'dliveryCharge', width: 70, renderer: null },
+        { label: "deliveryCharge", property: 'deliveryCharge', width: 70, renderer: null },
         {
           label: "Subtotal", property: 'subtotal', width: 70,
           renderer: (value, indexColumn, indexRow, row) => { return `${Number(value).toFixed(2)}` }
@@ -339,7 +339,7 @@ const createOrdersFromCartsAuto = async () => {
         })),
         subtotal: cart.subtotal,
         taxAmount: cart.taxAmount,
-        dliveryCharge: cart.dliveryCharge,
+        deliveryCharge: cart.deliveryCharge,
         discountAmount: cart.discountAmount,
         totalAmount: cart.totalAmount,
         startDate: cart.startDate,
@@ -391,6 +391,14 @@ exports.createOrderFromCart = async (req, res) => {
       return res.status(400).json({ message: "Cart is empty" });
     }
 
+    let walletAmount = user.wallet;
+    console.log(walletAmount);
+    console.log(cart.totalAmount);
+
+    if (walletAmount < cart.totalAmount) {
+      return res.status(400).json({ status: 400, message: "Insufficient funds in your wallet" });
+    }
+
     let order = new Order({
       user: userId,
       address: cart.address,
@@ -406,14 +414,13 @@ exports.createOrderFromCart = async (req, res) => {
       })),
       subtotal: cart.subtotal,
       taxAmount: cart.taxAmount,
-      dliveryCharge: cart.dliveryCharge,
+      deliveryCharge: cart.deliveryCharge,
       discountAmount: cart.discountAmount,
       totalAmount: cart.totalAmount,
     });
 
     await order.save();
 
-    let walletAmount = user.wallet;
     console.log('Initial wallet amount:', walletAmount);
     console.log('Cart total amount:', cart.totalAmount);
 

@@ -17,6 +17,7 @@ const Plan = require('../Models/planModel');
 // const Cart = require("../Models/cartModel");
 const Order = require("../Models/orderModel");
 const CartMinimumPrice = require('../Models/cartMinimumPriceModel');
+const Holiday = require('../Models/holidayModel');
 
 
 // const job = schedule.scheduleJob('*/10 * * * * *', async () => {
@@ -173,7 +174,7 @@ exports.AddCart1 = async (req, res) => {
   }
 };
 
-const checkSubscriptionsAndAddToCart = async () => {
+const checkSubscriptionsAndAddToCart1 = async () => {
   try {
     console.log('Entry');
 
@@ -181,6 +182,8 @@ const checkSubscriptionsAndAddToCart = async () => {
     console.log("currentDate", currentDate);
     const currentDateString = currentDate.toISOString().split('T')[0];
     console.log("currentDateString", currentDateString);
+
+    let userId;
 
     const subscriptions = await userSubscription.find({
       $or: [
@@ -193,13 +196,35 @@ const checkSubscriptionsAndAddToCart = async () => {
     for (const subscription of subscriptions) {
       const { productId, quantity: subscriptionQuantity, startDate, endDate } = subscription;
 
+      if (startDate > currentDate || endDate < currentDate) {
+        console.log(`Skipping subscription for product ID ${productId} due to expired dates`);
+        continue;
+      }
+
       const product = await Product.findById(productId);
       if (!product) {
         console.error(`Product with ID ${productId} not found`);
         continue;
       }
 
-      const userId = subscription.userId;
+      const userHolidays = await Holiday.find({
+        userId: userId,
+        startDate: { $lte: currentDate },
+        endDate: { $gte: currentDate }
+      });
+      console.log("userHolidays", userHolidays);
+
+      const isOnHoliday = userHolidays.some(holiday => currentDate >= holiday.startDate && currentDate <= holiday.endDate);
+      console.log("isOnHoliday", isOnHoliday);
+
+      if (isOnHoliday) {
+        console.log(`Skipping product addition to cart for subscription due to holiday on ${currentDateString}`);
+        continue;
+      }
+
+      userId = subscription.userId;
+      console.log("userId", userId);
+
       let cart = await Cart.findOne({
         userId: userId,
         createdAt: {
@@ -220,48 +245,159 @@ const checkSubscriptionsAndAddToCart = async () => {
       const price = product.discountActive ? product.discountPrice : product.originalPrice;
       cart.products.push({ productId, price, quantity: subscriptionQuantity });
 
-
       const subTotalAmount = cart.products.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
 
-      const taxRate = await Tax.findOne({});
-      if (!taxRate) {
-        console.error('Tax not found');
-        continue;
-      }
+      const taxRate = (await Tax.findOne({}))?.tax || 0;
+      const taxAmount = subTotalAmount * (taxRate / 100);
 
-      const taxRateDecimal = taxRate.tax / 100;
-      let taxAmount = subTotalAmount * taxRateDecimal;
-
-      cart.subtotal = subTotalAmount;
-      cart.taxAmount = Math.round(taxAmount);
-      cart.totalAmount = subTotalAmount + taxAmount;
+      const roundedTaxAmount = parseFloat(taxAmount.toFixed(2));
 
       const cartMinimumPrices = await CartMinimumPrice.findOne({});
       if (!cartMinimumPrices) {
-        console.error('Cart minimum prices not found');
-        continue;
+        return res.status(404).json({ status: 404, message: "Cart minimum prices not found" });
       }
 
-      let deliveryCharge = cart.dliveryCharge;
-      if (subTotalAmount <= cartMinimumPrices.minimumPrice) {
-        deliveryCharge = cartMinimumPrices.dliveryCharge;
-      } else {
-        deliveryCharge = 0;
-      }
+      let deliveryCharge = subTotalAmount <= cartMinimumPrices.minimumPrice ? cartMinimumPrices.dliveryCharge : 0;
 
-      cart.totalAmount += deliveryCharge;
-      cart.dliveryCharge = deliveryCharge;
-
-      const membership = await UserMembership.findOne({ userId: userId, isActive: true, status: 'Completed' });
+      const membership = await UserMembership.findOne({ userId, isActive: true, status: 'Completed' });
       if (membership) {
+        cart.deliveryCharge = 0;
         cart.membership = membership.membershipId;
         cart.userMembership = membership._id;
+      } else {
+        cart.deliveryCharge = deliveryCharge;
+        cart.membership = null;
+        cart.userMembership = null;
       }
+
+      let totalAmount = subTotalAmount + roundedTaxAmount + cart.deliveryCharge;
+
+      if (isNaN(totalAmount) || !isFinite(totalAmount)) {
+        totalAmount = 0;
+      }
+
+      cart.subtotal = Math.round(subTotalAmount);
+      cart.taxAmount = roundedTaxAmount;
+      const roundedTotalAmount = parseFloat(totalAmount.toFixed(2));
+      cart.totalAmount = roundedTotalAmount;
 
       await cart.save();
     }
     console.log('Exist');
 
+    console.log('Products added to cart for subscriptions successfully');
+  } catch (error) {
+    console.error('Error checking subscriptions and adding to cart:', error);
+  }
+};
+
+const checkSubscriptionsAndAddToCart = async () => {
+  try {
+    console.log('Entry');
+
+    const currentDate = new Date();
+    console.log("currentDate", currentDate);
+    const currentDateString = currentDate.toISOString().split('T')[0];
+    console.log("currentDateString", currentDateString);
+
+    const subscriptions = await userSubscription.find({
+      $or: [
+        { isSubscription: true },
+        { endDate: { $lt: currentDate } }
+      ]
+    });
+
+    for (const subscription of subscriptions) {
+      const { productId, quantity: subscriptionQuantity, startDate, endDate, userId } = subscription;
+      console.log("userId", userId);
+
+      if (startDate > currentDate || endDate < currentDate) {
+        console.log(`Skipping subscription for product ID ${productId} due to expired dates`);
+        continue;
+      }
+
+      const userHolidays = await Holiday.find({
+        userId: userId,
+        startDate: { $lte: currentDateString },
+        endDate: { $gte: currentDateString }
+      });
+      console.log("userHolidays", userHolidays);
+
+      const isOnHoliday = userHolidays.some(holiday =>
+        currentDateString >= holiday.startDate.toISOString().split('T')[0] &&
+        currentDateString <= holiday.endDate.toISOString().split('T')[0]
+      );
+      console.log("isOnHoliday", isOnHoliday);
+
+      if (isOnHoliday) {
+        console.log(`Skipping product addition to cart for subscription due to holiday on ${currentDateString}`);
+        continue;
+      }
+
+      let cart = await Cart.findOne({
+        userId: userId,
+        createdAt: {
+          $gte: new Date(currentDateString),
+          $lt: new Date(currentDateString + 'T23:59:59.999Z')
+        }
+      });
+
+      if (!cart) {
+        cart = new Cart({ userId, products: [], startDate, endDate });
+      }
+
+      const existingProductIndex = cart.products.findIndex(item => item.productId.equals(productId));
+
+      if (existingProductIndex !== -1) {
+        continue;
+      }
+
+      const product = await Product.findById(productId);
+      if (!product) {
+        console.error(`Product with ID ${productId} not found`);
+        continue;
+      }
+
+      const price = product.discountActive ? product.discountPrice : product.originalPrice;
+      cart.products.push({ productId, price, quantity: subscriptionQuantity });
+
+      const subTotalAmount = cart.products.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+      const taxRate = (await Tax.findOne({}))?.tax || 0;
+      const taxAmount = subTotalAmount * (taxRate / 100);
+      const roundedTaxAmount = parseFloat(taxAmount.toFixed(2));
+
+      const cartMinimumPrices = await CartMinimumPrice.findOne({});
+      if (!cartMinimumPrices) {
+        console.error("Cart minimum prices not found");
+        continue;
+      }
+
+      let deliveryCharge = subTotalAmount <= cartMinimumPrices.minimumPrice ? cartMinimumPrices.dliveryCharge : 0;
+
+      const membership = await UserMembership.findOne({ userId, isActive: true, status: 'Completed' });
+      if (membership) {
+        cart.deliveryCharge = 0;
+        cart.membership = membership.membershipId;
+        cart.userMembership = membership._id;
+      } else {
+        cart.deliveryCharge = deliveryCharge;
+        cart.membership = null;
+        cart.userMembership = null;
+      }
+
+      let totalAmount = subTotalAmount + roundedTaxAmount + cart.deliveryCharge;
+      if (isNaN(totalAmount) || !isFinite(totalAmount)) {
+        totalAmount = 0;
+      }
+
+      cart.subtotal = Math.round(subTotalAmount);
+      cart.taxAmount = roundedTaxAmount;
+      cart.totalAmount = parseFloat(totalAmount.toFixed(2));
+
+      await cart.save();
+    }
+
+    console.log('Exist');
     console.log('Products added to cart for subscriptions successfully');
   } catch (error) {
     console.error('Error checking subscriptions and adding to cart:', error);
@@ -276,12 +412,11 @@ cron.schedule('0 11 * * *', () => {
   checkSubscriptionsAndAddToCart();
 });
 
-
 exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     const userId = req.user.id;
-    console.log(userId);
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ status: 404, message: "User not found" });
@@ -291,17 +426,44 @@ exports.addToCart = async (req, res) => {
     if (!product) {
       return res.status(404).json({ status: 404, message: "Product not found" });
     }
+    // const currentDate = new Date();
+    // console.log("currentDate", currentDate);
+    // const currentDateString = currentDate.toISOString().split('T')[0];
+    // console.log("currentDateString", currentDateString);
+
+    // const userHolidays = await Holiday.find({
+    //   userId: userId,
+    //   startDate: { $lte: currentDateString },
+    //   endDate: { $gte: currentDateString }
+    // });
+    // console.log("userHolidays", userHolidays);
+
+    // const isOnHoliday = userHolidays.some(holiday =>
+    //   currentDateString >= holiday.startDate.toISOString().split('T')[0] &&
+    //   currentDateString <= holiday.endDate.toISOString().split('T')[0]
+    // );
+    // console.log("isOnHoliday", isOnHoliday);
+
+    // if (isOnHoliday) {
+    //   return res.status(404).json({ status: 404, message: `Skipping product addition to cart for subscription due to holiday on ${currentDateString}` });
+    // }
 
     const price = product.discountActive ? product.discountPrice : product.originalPrice;
 
     let cart = await Cart.findOne({ userId });
-
     if (!cart) {
       cart = new Cart({ userId, products: [] });
     }
 
-    const existingProduct = cart.products.find(item => item.productId.equals(productId));
+    let walletAmount = user.wallet;
+    console.log(walletAmount);
+    console.log(cart.totalAmount);
 
+    if (walletAmount < cart.totalAmount) {
+      return res.status(400).json({ status: 400, message: "Insufficient funds in your wallet" });
+    }
+
+    const existingProduct = cart.products.find(item => item.productId.equals(productId));
     if (existingProduct) {
       existingProduct.quantity += quantity;
     } else {
@@ -310,52 +472,41 @@ exports.addToCart = async (req, res) => {
 
     const subTotalAmount = cart.products.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
 
-    const taxRate = await Tax.findOne({});
-    if (!taxRate) {
-      return res.status(404).json({ status: 404, message: "Tax not found" });
-    }
+    const taxRate = (await Tax.findOne({}))?.tax || 0;
+    const taxAmount = subTotalAmount * (taxRate / 100);
 
-    const taxRateDecimal = taxRate.tax / 100;
-    let taxAmount = subTotalAmount * taxRateDecimal;
+    const roundedTaxAmount = parseFloat(taxAmount.toFixed(2));
 
-    cart.subtotal = subTotalAmount;
-    cart.taxAmount = Math.round(taxAmount);
-    cart.totalAmount = subTotalAmount + taxAmount;
-
-    console.log("----", cart);
     const cartMinimumPrices = await CartMinimumPrice.findOne({});
     if (!cartMinimumPrices) {
       return res.status(404).json({ status: 404, message: "Cart minimum prices not found" });
     }
-    console.log("cartMinimumPrices.minimumPrice", cartMinimumPrices.minimumPrice);
 
-    let dliveryCharge = cart.dliveryCharge
-    if (subTotalAmount <= cartMinimumPrices.minimumPrice) {
-      dliveryCharge = cartMinimumPrices.dliveryCharge;
-    } else {
-      dliveryCharge = 0;
-    }
+    let deliveryCharge = subTotalAmount <= cartMinimumPrices.minimumPrice ? cartMinimumPrices.dliveryCharge : 0;
 
-    cart.totalAmount = subTotalAmount + Math.round(taxAmount) + dliveryCharge;
-    cart.dliveryCharge = dliveryCharge;
-
-    const walletAmount = user.wallet;
-    console.log(walletAmount);
-    console.log(cart.totalAmount);
-
-    if (walletAmount < cart.totalAmount) {
-      return res.status(400).json({ status: 400, message: "Insufficient funds in wallet" });
-    }
-
-    await cart.save();
-
-    const membership = await UserMembership.findOne({ userId: userId, isActive: true, status: 'Completed' });
-    console.log("membership", membership);
+    const membership = await UserMembership.findOne({ userId, isActive: true, status: 'Completed' });
     if (membership) {
+      cart.deliveryCharge = 0;
       cart.membership = membership.membershipId;
       cart.userMembership = membership._id;
-      await cart.save();
+    } else {
+      cart.deliveryCharge = deliveryCharge;
+      cart.membership = null;
+      cart.userMembership = null;
     }
+
+    let totalAmount = subTotalAmount + roundedTaxAmount + cart.deliveryCharge;
+
+    if (isNaN(totalAmount) || !isFinite(totalAmount)) {
+      totalAmount = 0;
+    }
+
+    cart.subtotal = Math.round(subTotalAmount);
+    cart.taxAmount = roundedTaxAmount;
+    const roundedTotalAmount = parseFloat(totalAmount.toFixed(2));
+    cart.totalAmount = roundedTotalAmount;
+
+    await cart.save();
 
     return res.status(201).json({ status: 201, message: 'Product added to cart successfully', data: cart });
   } catch (error) {
@@ -438,15 +589,15 @@ exports.updateCartItemQuantity = async (req, res) => {
       return res.status(404).json({ status: 404, message: "Cart minimum prices not found" });
     }
 
-    let dliveryCharge = cart.dliveryCharge
+    let deliveryCharge = cart.deliveryCharge
     if (subTotalAmount <= cartMinimumPrices.minimumPrice) {
-      dliveryCharge = cartMinimumPrices.dliveryCharge;
+      deliveryCharge = cartMinimumPrices.deliveryCharge;
     } else {
-      dliveryCharge = 0;
+      deliveryCharge = 0;
     }
 
-    cart.totalAmount = subTotalAmount + Math.round(taxAmount) + dliveryCharge;
-    cart.dliveryCharge = dliveryCharge;
+    cart.totalAmount = subTotalAmount + Math.round(taxAmount) + deliveryCharge;
+    cart.deliveryCharge = deliveryCharge;
 
     const walletAmount = user.wallet;
     console.log(walletAmount);
