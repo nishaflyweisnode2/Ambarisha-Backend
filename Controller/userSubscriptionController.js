@@ -43,6 +43,18 @@ exports.createSubscription = async (req, res) => {
         if (!product) {
             return res.status(404).json({ status: 404, message: "product not found" });
         }
+
+        const price = product.discountActive ? product.discountPrice : product.originalPrice;
+
+        let walletAmount = user.wallet;
+        console.log("walletAmount", walletAmount);
+        console.log("price", price);
+        console.log("price.quantity", price * quantity);
+
+        if (walletAmount < price * quantity) {
+            return res.status(400).json({ status: 400, message: "Insufficient funds in your wallet" });
+        }
+
         const plan = await Plan.findById(planId)
         if (!plan) {
             return res.status(404).json({ status: 404, message: "Plan not found" });
@@ -132,6 +144,17 @@ exports.updateSubscription = async (req, res) => {
             const product = await Product.findById(req.body.ProductId)
             if (!product) {
                 return res.status(404).json({ status: 404, message: "product not found" });
+            }
+            
+            const price = product.discountActive ? product.discountPrice : product.originalPrice;
+
+            let walletAmount = user.wallet;
+            console.log("walletAmount", walletAmount);
+            console.log("price", price);
+            console.log("price.quantity", price * quantity);
+
+            if (walletAmount < price * quantity) {
+                return res.status(400).json({ status: 400, message: "Insufficient funds in your wallet" });
             }
         }
 

@@ -16,6 +16,7 @@ const RewardPoint = require('../Models/rewardModel');
 const ContactInformation = require('../Models/ContactusModel');
 const CartMinimumPrice = require('../Models/cartMinimumPriceModel');
 const AdminIssue = require('../Models/issueModel');
+const PackagingCharge = require('../Models/packagingModel');
 
 
 
@@ -366,10 +367,10 @@ exports.updatePlan = async (req, res) => {
         if (!plan) {
             return res.status(404).json({ status: 404, message: 'Plan not found' });
         }
-        res.status(200).json({ status: 200, message: 'Plan updated successfully', data: plan });
+        return res.status(200).json({ status: 200, message: 'Plan updated successfully', data: plan });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+        return res.status(500).json({ status: 500, message: 'Server error', error: error.message });
     }
 };
 
@@ -379,10 +380,10 @@ exports.deletePlan = async (req, res) => {
         if (!plan) {
             return res.status(404).json({ status: 404, message: 'Plan not found' });
         }
-        res.status(200).json({ status: 200, message: 'Plan deleted successfully' });
+        return res.status(200).json({ status: 200, message: 'Plan deleted successfully' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+        return res.status(500).json({ status: 500, message: 'Server error', error: error.message });
     }
 };
 
@@ -412,7 +413,7 @@ exports.updateSubscription = catchAsyncErrors(async (req, res, next) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({
+        return res.status(500).json({
             status: 500,
             message: 'Internal server error',
             data: error.message,
@@ -423,18 +424,18 @@ exports.updateSubscription = catchAsyncErrors(async (req, res, next) => {
 exports.createMembership = async (req, res) => {
     try {
         const membership = await Membership.create(req.body);
-        res.status(201).json({ success: true, data: membership });
+        return res.status(201).json({ success: true, data: membership });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        return res.status(500).json({ success: false, error: error.message });
     }
 };
 
 exports.getMemberships = async (req, res) => {
     try {
         const memberships = await Membership.find();
-        res.status(200).json({ success: true, count: memberships.length, data: memberships });
+        return res.status(200).json({ success: true, count: memberships.length, data: memberships });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        return res.status(500).json({ success: false, error: error.message });
     }
 };
 
@@ -482,10 +483,10 @@ exports.createRewardPoint = async (req, res) => {
         const { user, points, description } = req.body;
         const rewardPoint = new RewardPoint({ user, points, description });
         await rewardPoint.save();
-        res.status(201).json({ success: true, data: rewardPoint });
+        return res.status(201).json({ success: true, data: rewardPoint });
     } catch (error) {
         console.error('Error creating reward point:', error);
-        res.status(500).json({ success: false, error: 'Internal server error' });
+        return res.status(500).json({ success: false, error: 'Internal server error' });
     }
 };
 
@@ -579,9 +580,9 @@ exports.createContactInformation = async (req, res) => {
             whatsappChat
         });
         const savedContactInfo = await contactInfo.save();
-        res.status(201).json(savedContactInfo);
+        return res.status(201).json(savedContactInfo);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: error.message });
     }
 };
 
@@ -631,7 +632,7 @@ exports.deleteContactInformation = async (req, res) => {
         }
         res.status(200).json({ message: 'Contact information deleted successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: error.message });
     }
 };
 
@@ -639,10 +640,10 @@ exports.createCartMinimumPrice = async (req, res) => {
     try {
         const { minimumPrice, dliveryCharge } = req.body;
         const cartMinimumPrice = await CartMinimumPrice.create({ minimumPrice, dliveryCharge });
-        res.status(201).json({ status: 201, data: cartMinimumPrice });
+        return res.status(201).json({ status: 201, data: cartMinimumPrice });
     } catch (error) {
         console.log(error);
-        res.status(500).json({ status: 500, message: error.message });
+        return res.status(500).json({ status: 500, message: error.message });
     }
 };
 
@@ -692,10 +693,10 @@ exports.createAdminIssue = async (req, res) => {
         const { title } = req.body;
         const newIssue = new AdminIssue({ title });
         await newIssue.save();
-        res.status(201).json({ message: 'Admin issue created successfully', issue: newIssue });
+        return res.status(201).json({ message: 'Admin issue created successfully', issue: newIssue });
     } catch (error) {
         console.error('Error creating admin issue:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -749,5 +750,70 @@ exports.deleteAdminIssue = async (req, res) => {
     } catch (error) {
         console.error('Error deleting admin issue:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+exports.createPackagingCharge = async (req, res) => {
+    try {
+        const { chargeAmount, oldAmount, status } = req.body;
+        const newPackagingCharge = new PackagingCharge({ chargeAmount, oldAmount, status });
+        const savedCharge = await newPackagingCharge.save();
+        return res.status(201).json({ status: 201, message: 'Packaging charge created successfully', data: savedCharge });
+    } catch (error) {
+        console.error('Error creating packaging charge:', error);
+        return res.status(500).json({ status: 500, error: 'Internal server error' });
+    }
+};
+
+exports.getAllPackagingCharges = async (req, res) => {
+    try {
+        const charges = await PackagingCharge.find();
+        return res.status(200).json({ status: 200, data: charges });
+    } catch (error) {
+        console.error('Error getting packaging charges:', error);
+        return res.status(500).json({ status: 500, error: 'Internal server error' });
+    }
+};
+
+exports.getPackagingChargeById = async (req, res) => {
+    try {
+        const chargeId = req.params.id;
+        const charge = await PackagingCharge.findById(chargeId);
+        if (!charge) {
+            return res.status(404).json({ status: 404, message: 'Packaging charge not found' });
+        }
+        return res.status(200).json({ status: 200, data: charge });
+    } catch (error) {
+        console.error('Error getting packaging charge by ID:', error);
+        return res.status(500).json({ status: 500, error: 'Internal server error' });
+    }
+};
+
+exports.updatePackagingChargeById = async (req, res) => {
+    try {
+        const chargeId = req.params.id;
+        const { chargeAmount, oldAmount, status } = req.body;
+        const updatedCharge = await PackagingCharge.findByIdAndUpdate(chargeId, { chargeAmount, oldAmount, status }, { new: true });
+        if (!updatedCharge) {
+            return res.status(404).json({ status: 404, message: 'Packaging charge not found' });
+        }
+        return res.status(200).json({ status: 200, message: 'Packaging charge updated successfully', data: updatedCharge });
+    } catch (error) {
+        console.error('Error updating packaging charge:', error);
+        return res.status(500).json({ status: 500, error: 'Internal server error' });
+    }
+};
+
+exports.deletePackagingChargeById = async (req, res) => {
+    try {
+        const chargeId = req.params.id;
+        const deletedCharge = await PackagingCharge.findByIdAndDelete(chargeId);
+        if (!deletedCharge) {
+            return res.status(404).json({ status: 404, message: 'Packaging charge not found' });
+        }
+        return res.status(200).json({ status: 200, message: 'Packaging charge deleted successfully', data: deletedCharge });
+    } catch (error) {
+        console.error('Error deleting packaging charge:', error);
+        return res.status(500).json({ status: 500, error: 'Internal server error' });
     }
 };

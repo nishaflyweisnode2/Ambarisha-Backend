@@ -18,6 +18,7 @@ const Plan = require('../Models/planModel');
 const Order = require("../Models/orderModel");
 const CartMinimumPrice = require('../Models/cartMinimumPriceModel');
 const Holiday = require('../Models/holidayModel');
+const PackagingCharge = require('../Models/packagingModel');
 
 
 // const job = schedule.scheduleJob('*/10 * * * * *', async () => {
@@ -316,6 +317,17 @@ const checkSubscriptionsAndAddToCart = async () => {
         continue;
       }
 
+      const product = await Product.findById(productId);
+      if (!product) {
+        console.error(`Product with ID ${productId} not found`);
+        continue;
+      }
+
+      if (product.stock <= 0 || product.stock < subscriptionQuantity) {
+        console.log(`Skipping product ID ${productId} due to out of stock`);
+        continue;
+      }
+
       const userHolidays = await Holiday.find({
         userId: userId,
         startDate: { $lte: currentDateString },
@@ -352,12 +364,6 @@ const checkSubscriptionsAndAddToCart = async () => {
         continue;
       }
 
-      const product = await Product.findById(productId);
-      if (!product) {
-        console.error(`Product with ID ${productId} not found`);
-        continue;
-      }
-
       const price = product.discountActive ? product.discountPrice : product.originalPrice;
       cart.products.push({ productId, price, quantity: subscriptionQuantity });
 
@@ -365,6 +371,13 @@ const checkSubscriptionsAndAddToCart = async () => {
       const taxRate = (await Tax.findOne({}))?.tax || 0;
       const taxAmount = subTotalAmount * (taxRate / 100);
       const roundedTaxAmount = parseFloat(taxAmount.toFixed(2));
+
+      const packagingRate = await PackagingCharge.findOne({});
+      if (packagingRate) {
+        cart.packagingCharge = packagingRate.chargeAmount;
+      } else {
+        cart.packagingCharge = 0;
+      }
 
       const cartMinimumPrices = await CartMinimumPrice.findOne({});
       if (!cartMinimumPrices) {
@@ -406,8 +419,8 @@ const checkSubscriptionsAndAddToCart = async () => {
 
 
 // Schedule the cron job to run every day at 12 PM
-cron.schedule('0 11 * * *', () => {
-  // cron.schedule('* * * * *', () => {
+// cron.schedule('0 11 * * *', () => {
+cron.schedule('* * * * *', () => {
   console.log('Running cron job to check subscriptions and add to cart');
   checkSubscriptionsAndAddToCart();
 });
@@ -448,6 +461,10 @@ exports.addToCart = async (req, res) => {
     //   return res.status(404).json({ status: 404, message: `Skipping product addition to cart for subscription due to holiday on ${currentDateString}` });
     // }
 
+    if (product.stock <= 0 || product.stock < quantity) {
+      return res.status(400).json({ status: 400, message: "Product is out of stock" });
+    }
+
     const price = product.discountActive ? product.discountPrice : product.originalPrice;
 
     let cart = await Cart.findOne({ userId });
@@ -468,6 +485,13 @@ exports.addToCart = async (req, res) => {
       existingProduct.quantity += quantity;
     } else {
       cart.products.push({ productId, price, quantity });
+    }
+
+    const packagingRate = await PackagingCharge.findOne({});
+    if (packagingRate) {
+      cart.packagingCharge = packagingRate.oldAmount;
+    } else {
+      cart.packagingCharge = 0;
     }
 
     const subTotalAmount = cart.products.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
@@ -495,7 +519,7 @@ exports.addToCart = async (req, res) => {
       cart.userMembership = null;
     }
 
-    let totalAmount = subTotalAmount + roundedTaxAmount + cart.deliveryCharge;
+    let totalAmount = subTotalAmount + roundedTaxAmount + cart.deliveryCharge + cart.packagingCharge;
 
     if (isNaN(totalAmount) || !isFinite(totalAmount)) {
       totalAmount = 0;
@@ -672,7 +696,14 @@ exports.updateCartItemQuantity1 = async (req, res) => {
       deliveryCharge = 0;
     }
 
-    cart.totalAmount = subTotalAmount + cart.taxAmount + deliveryCharge;
+    const packagingRate = await PackagingCharge.findOne({});
+    if (packagingRate) {
+      cart.packagingCharge = packagingRate.oldAmount;
+    } else {
+      cart.packagingCharge = 0;
+    }
+
+    cart.totalAmount = subTotalAmount + cart.taxAmount + deliveryCharge + cart.packagingCharge;
     cart.deliveryCharge = deliveryCharge;
 
     const walletAmount = user.wallet;

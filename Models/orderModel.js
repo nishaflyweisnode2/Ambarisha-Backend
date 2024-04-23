@@ -68,6 +68,9 @@ const orderSchema = new mongoose.Schema(
       enum: ['pending', 'confirmed', 'accepted', 'rejected', 'picked', 'checked', 'preparing', 'ready to deliver', 'rejected', 'delivered', 'emergency'],
       default: 'pending'
     },
+    message: {
+      type: String,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

@@ -17,6 +17,7 @@ const Apartment = require("../Models/apartmentModel");
 require('dotenv').config();
 const City = require('../Models/cityModel');
 const TowerBlock = require('../Models/blockTowerModel');
+const Product = require("../Models/productModel");
 
 
 
@@ -350,6 +351,14 @@ const createOrdersFromCartsAuto = async () => {
       await order.save();
       await Cart.findByIdAndDelete(cart._id);
 
+      for (const item of cart.products) {
+        const product = await Product.findById(item.productId);
+        if (product) {
+          product.stock -= item.quantity;
+          await product.save();
+        }
+      }
+
       order = await Order.findById(order._id).populate("products.productId").populate('plan subscription userSubscription userMembership membership');
 
       const invoicePath = generateInvoicePDF1(order, user)
@@ -370,8 +379,8 @@ const createOrdersFromCartsAuto = async () => {
 };
 
 // Schedule the cron job to run every day at 12 PM
-cron.schedule('0 18 * * *', () => {
-  // cron.schedule('* * * * *', () => {
+// cron.schedule('0 18 * * *', () => {
+cron.schedule('* * * * *', () => {
   console.log('Running cron job to check Order create by cart sucessfully ');
   createOrdersFromCartsAuto();
 });
@@ -425,10 +434,19 @@ exports.createOrderFromCart = async (req, res) => {
     console.log('Cart total amount:', cart.totalAmount);
 
     user.wallet -= cart.totalAmount;
+    user.wallet = Math.round(user.wallet);
     await user.save();
     console.log('Updated wallet amount after deduction:', user.wallet);
 
     await Cart.findByIdAndDelete(cart._id);
+
+    for (const item of cart.products) {
+      const product = await Product.findById(item.productId);
+      if (product) {
+        product.stock -= item.quantity;
+        await product.save();
+      }
+    }
 
     order = await Order.findById(order._id).populate("products.productId").populate('plan subscription userSubscription userMembership membership');
 
@@ -499,15 +517,24 @@ exports.myOrder = async (req, res) => {
 
 exports.orderStatus = async (req, res) => {
   const orderId = req.params.orderId;
-  const { newStatus } = req.body;
+  const { newStatus, message } = req.body;
 
   try {
-    const order = await Order.findOne({ _id: orderId, });
+    const order = await Order.findOne({ _id: orderId });
 
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-    console.log(newStatus);
+
+    if (newStatus === 'emergency') {
+
+      order.status = newStatus;
+      order.message = message;
+      await order.save();
+
+      return res.json({ message: 'Order status updated successfully', order });
+    }
+
     order.status = newStatus;
     await order.save();
 
@@ -517,6 +544,7 @@ exports.orderStatus = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 exports.getAllOrdersCategories = async (req, res) => {
   try {

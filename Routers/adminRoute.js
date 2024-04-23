@@ -49,7 +49,11 @@ router.get('/admin-issues', auth.getAllAdminIssues);
 router.get('/admin-issues/:id', auth.getAdminIssueById);
 router.put('/admin-issues/:id', [authJwt.isAdmin], auth.updateAdminIssue);
 router.delete('/admin-issues/:id', [authJwt.isAdmin], auth.deleteAdminIssue);
-
+router.post('/admin/packaging', [authJwt.isAdmin], auth.createPackagingCharge);
+router.get('/admin/packaging', [authJwt.isAdmin], auth.getAllPackagingCharges);
+router.get('/admin/packaging/:id', [authJwt.isAdmin], auth.getPackagingChargeById);
+router.put('/admin/packaging/:id', [authJwt.isAdmin], auth.updatePackagingChargeById);
+router.delete('/admin/packaging/:id', [authJwt.isAdmin], auth.deletePackagingChargeById);
 
 
 module.exports = router;

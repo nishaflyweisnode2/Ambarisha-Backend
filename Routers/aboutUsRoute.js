@@ -11,4 +11,5 @@ router.get('/admin/AboutApps/:id', /*[authJwt.isAdmin],*/ auth.getAboutAppsById)
 router.put('/admin/AboutApps/:id', [authJwt.isAdmin], auth.updateAboutAppsById);
 router.delete('/admin/AboutApps/:id', [authJwt.isAdmin], auth.deleteAboutAppsById);
 
+
 module.exports = router;
