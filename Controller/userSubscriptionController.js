@@ -145,16 +145,19 @@ exports.updateSubscription = async (req, res) => {
             if (!product) {
                 return res.status(404).json({ status: 404, message: "product not found" });
             }
-            
+
             const price = product.discountActive ? product.discountPrice : product.originalPrice;
 
-            let walletAmount = user.wallet;
-            console.log("walletAmount", walletAmount);
-            console.log("price", price);
-            console.log("price.quantity", price * quantity);
-
-            if (walletAmount < price * quantity) {
-                return res.status(400).json({ status: 400, message: "Insufficient funds in your wallet" });
+            if (req.body.status === "Completed") {
+                let walletAmount = user.wallet;
+                console.log("walletAmount", walletAmount);
+                if (walletAmount < userMembership.pricePaid) {
+                    return res.status(400).json({ status: 400, message: "Insufficient funds in your wallet" });
+                }
+                let newWalletAmount = walletAmount - userMembership.pricePaid;
+                user.wallet = newWalletAmount;
+                console.log("newWalletAmount", newWalletAmount);
+                await user.save();
             }
         }
 

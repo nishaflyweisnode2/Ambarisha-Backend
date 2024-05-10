@@ -521,6 +521,10 @@ exports.addToCart = async (req, res) => {
 
     let totalAmount = subTotalAmount + roundedTaxAmount + cart.deliveryCharge + cart.packagingCharge;
 
+    if (walletAmount < totalAmount) {
+      return res.status(400).json({ status: 400, message: "Insufficient funds in your wallet" });
+    }
+
     if (isNaN(totalAmount) || !isFinite(totalAmount)) {
       totalAmount = 0;
     }

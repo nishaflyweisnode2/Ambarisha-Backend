@@ -60,6 +60,11 @@ exports.createUserMembership = async (req, res) => {
             pricePaid = 0;
         }
 
+        let walletAmount = user.wallet;
+        console.log("walletAmount", walletAmount);
+        if (walletAmount < pricePaid) {
+            return res.status(400).json({ status: 400, message: "Insufficient funds in your wallet" });
+        }
 
         const startDate = new Date();
         const durationInDays = membership.duration;
@@ -132,6 +137,10 @@ exports.getUserMembershipById = async (req, res) => {
 exports.updateUserMembershipById = async (req, res) => {
     try {
         const { id } = req.params;
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            res.status(404).send({ status: 404, message: "user not found ", data: {}, });
+        }
 
         let userMembership = await UserMembership.findById(id);
 
@@ -140,6 +149,18 @@ exports.updateUserMembershipById = async (req, res) => {
         }
 
         userMembership.set(req.body);
+
+        if(req.body.status === "Completed"){
+        let walletAmount = user.wallet;
+        console.log("walletAmount", walletAmount);
+        if (walletAmount < userMembership.pricePaid) {
+            return res.status(400).json({ status: 400, message: "Insufficient funds in your wallet" });
+        }
+        let newWalletAmount = walletAmount - userMembership.pricePaid;
+        user.wallet = newWalletAmount;
+        console.log("newWalletAmount", newWalletAmount);
+        await user.save();
+    }
 
         userMembership = await userMembership.save();
 
