@@ -506,7 +506,7 @@ exports.myOrder = async (req, res) => {
       populate: {
         path: 'category',
       },
-    }).populate('plan subscription userSubscription userMembership membership');
+    }).populate('plan subscription userSubscription userMembership membership').populate('user');
 
     res.json({ orders });
   } catch (error) {
