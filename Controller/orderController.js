@@ -467,7 +467,17 @@ exports.createOrderFromCart = async (req, res) => {
 
 exports.allOrder = async (req, res) => {
   try {
-    const orders = await Order.find();
+    const orders = await Order.find().populate({
+      path: 'products.productId',
+      populate: {
+        path: 'category',
+      },
+    }).populate({
+      path: 'products.productId',
+      populate: {
+        path: 'subcategory',
+      },
+    }).populate('plan subscription userSubscription userMembership membership').populate('user');
     res.json({ orders });
   } catch (error) {
     console.error("Error fetching orders:", error);
