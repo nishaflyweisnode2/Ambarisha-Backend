@@ -179,7 +179,7 @@ exports.getDiscountedProducts = async (req, res) => {
 };
 exports.allProduct = catchAsyncErrors(async (req, res, next) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find().populate('subcategory category');
     res.status(200).json({
       status: "success",
       data: products,
