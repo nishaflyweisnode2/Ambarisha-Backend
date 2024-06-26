@@ -492,7 +492,7 @@ exports.createRewardPoint = async (req, res) => {
 
 exports.getAllRewardPoints = async (req, res) => {
     try {
-        const rewardPoints = await RewardPoint.find();
+        const rewardPoints = await RewardPoint.find().populate('user');
         res.status(200).json({ success: true, data: rewardPoints });
     } catch (error) {
         console.error('Error fetching reward points:', error);
