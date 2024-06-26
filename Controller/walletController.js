@@ -77,3 +77,23 @@ exports.myWallet = async (req, res) => {
       });
   }
 };
+
+exports.AllWalletTransction = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const transactions = await WalletTransaction.find().sort({
+      timestamp: -1,
+    }).populate('user');
+
+    res.status(200).json({ success: true, transactions });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "An error occurred while fetching transaction history",
+      });
+  }
+};
