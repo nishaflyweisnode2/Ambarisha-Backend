@@ -27,9 +27,9 @@ const randomatic = require('randomatic');
 //     process.env.TWILIO_AUTH_TOKEN
 //   );
 cloudinary.config({
-  cloud_name: 'dtijhcmaa',
-  api_key: '624644714628939',
-  api_secret: 'tU52wM1-XoaFD2NrHbPrkiVKZvY'
+  cloud_name: 'dvwecihog',
+  api_key: '364881266278834',
+  api_secret: '5_okbyciVx-7qFz7oP31uOpuv7Q'
 });
 
 const reffralCode = async () => {
