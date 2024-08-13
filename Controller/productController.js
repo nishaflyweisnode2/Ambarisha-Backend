@@ -198,7 +198,7 @@ exports.singleProduct = catchAsyncErrors(async (req, res, next) => {
   const productId = req.params.productId;
 
   try {
-    const product = await Product.findById(productId);
+    const product = await Product.findById(productId).populate('subcategory category');
 
     if (!product) {
       return res.status(404).json({
@@ -324,7 +324,7 @@ exports.productbyCategory = catchAsyncErrors(async (req, res, next) => {
 
   try {
     // Find all products with the specified category ID
-    const products = await Product.find({ category: categoryId });
+    const products = await Product.find({ category: categoryId }).populate('subcategory category');
 
     res.status(200).json({ success: true, data: products });
   } catch (error) {
@@ -338,7 +338,7 @@ exports.productbysubCategory = catchAsyncErrors(async (req, res, next) => {
 
   try {
     // Find all products with the specified subcategory ID
-    const products = await Product.find({ subcategory: subcategoryId });
+    const products = await Product.find({ subcategory: subcategoryId }).populate('subcategory category');
 
     res.status(200).json({ success: true, data: products });
   } catch (error) {
@@ -375,7 +375,7 @@ exports.getProductsByType = async (req, res) => {
 
   try {
     // Fetch products by type from the database
-    const products = await Product.find({ type });
+    const products = await Product.find({ type }).populate('subcategory category');
 
     // Send the products as a JSON response
     res.json({ products });

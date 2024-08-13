@@ -75,7 +75,7 @@ exports.getsubofCat = async (req, res) => {
     const { categoryId } = req.params;
 
     // Find subcategories that have the specified categoryId
-    const subcategories = await Subcategory.find({ categoryId });
+    const subcategories = await Subcategory.find({ categoryId }).populate('categoryId');
 
     if (!subcategories) {
       return res.status(404).json({ message: 'Subcategories not found for this category' });
