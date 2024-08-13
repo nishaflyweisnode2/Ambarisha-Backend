@@ -45,19 +45,28 @@ exports.getSubcategories = async (req, res) => {
   res.status(201).json({ success: true, subcategories, });
 };
 exports.updateSubcategory = async (req, res) => {
-  const { id } = req.params;
-  const subcategory = await Subcategory.findById(id);
-  if (!Subcategory) {
-    res.status(404).json({ message: "Subcategory Not Found", status: 404, data: {} });
+  try {
+    const { id } = req.params;
+    const subcategory = await Subcategory.findById(id);
+    if (!subcategory) {
+      return res.status(404).json({ message: "Subcategory Not Found", status: 404, data: {} });
+    }
+
+    upload.single("image")(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ message: err.message });
+      }
+
+      const fileUrl = req.file ? req.file.path : subcategory.image;
+      subcategory.image = fileUrl;
+      subcategory.name = req.body.name || subcategory.name;
+
+      const updatedSubcategory = await subcategory.save();
+      res.status(200).json({ message: "Updated Successfully", data: updatedSubcategory });
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
-  upload.single("image")(req, res, async (err) => {
-    if (err) { return res.status(400).json({ msg: err.message }); }
-    const fileUrl = req.file ? req.file.path : "";
-    subcategory.image = fileUrl || subcategory.image;
-    subcategory.name = req.body.name;
-    let update = await subcategory.save();
-    res.status(200).json({ message: "Updated Successfully", data: update });
-  })
 };
 exports.removeSubcategory = async (req, res) => {
   const { id } = req.params;
