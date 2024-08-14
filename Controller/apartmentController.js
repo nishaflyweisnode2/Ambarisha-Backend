@@ -51,7 +51,7 @@ exports.createApartment = async (req, res) => {
 
 exports.getApartment = async (req, res) => {
   try {
-    const apartment = await Apartment.find({});
+    const apartment = await Apartment.find({}).populate('city');
     res.status(201).json({ success: true, apartment, });
   } catch (error) {
     res.status(500).json({ status: 500, message: "internal server error ", data: error.message, });
@@ -66,7 +66,7 @@ exports.getApartmentByCityId = async (req, res) => {
     if (!city) {
       return res.status(404).json({ status: 404, message: 'City not found' });
     }
-    const apartment = await Apartment.find({ city: cityId });
+    const apartment = await Apartment.find({ city: cityId }).populate('city');
 
     return res.status(201).json({ status: 200, data: apartment, });
   } catch (error) {
@@ -158,7 +158,7 @@ exports.createTowerBlock = async (req, res) => {
 
 exports.getTowerBlock = async (req, res) => {
   try {
-    const apartment = await TowerBlock.find({});
+    const apartment = await TowerBlock.find({}).populate('apartment city');
     res.status(201).json({ success: true, apartment, });
   } catch (error) {
     res.status(500).json({ status: 500, message: "internal server error ", data: error.message, });
@@ -173,7 +173,7 @@ exports.getTowerBlockByCityId = async (req, res) => {
     if (!city) {
       return res.status(404).json({ status: 404, message: 'City not found' });
     }
-    const apartment = await TowerBlock.find({ city: cityId });
+    const apartment = await TowerBlock.find({ city: cityId }).populate('apartment city');
 
     return res.status(201).json({ status: 200, data: apartment, });
   } catch (error) {
@@ -189,7 +189,7 @@ exports.getTowerBlockByApartmentId = async (req, res) => {
     if (!apartment) {
       return res.status(404).json({ status: 404, message: 'Apartment not found' });
     }
-    const tower = await TowerBlock.find({ apartment: apartmentId });
+    const tower = await TowerBlock.find({ apartment: apartmentId }).populate('apartment city');
 
     return res.status(201).json({ status: 200, data: tower, });
   } catch (error) {

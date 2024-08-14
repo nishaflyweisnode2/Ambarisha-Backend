@@ -60,6 +60,7 @@ exports.updateSubcategory = async (req, res) => {
       const fileUrl = req.file ? req.file.path : subcategory.image;
       subcategory.image = fileUrl;
       subcategory.name = req.body.name || subcategory.name;
+      subcategory.categoryId = req.body.categoryId || subcategory.categoryId;
 
       const updatedSubcategory = await subcategory.save();
       res.status(200).json({ message: "Updated Successfully", data: updatedSubcategory });
