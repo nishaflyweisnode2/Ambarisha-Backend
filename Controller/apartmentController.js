@@ -206,7 +206,7 @@ exports.updateTowerBlock = async (req, res) => {
     }
 
     if (req.body.apartment) {
-      const apartment = await Apartment.findById(req.body.apartment);
+      const apartment = await TowerBlock.findById(req.body.apartment);
       if (!apartment) {
         return res.status(404).json({ status: 404, message: 'Apartment not found' });
       }
