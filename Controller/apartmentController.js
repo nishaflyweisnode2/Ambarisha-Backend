@@ -23,12 +23,12 @@ const upload = multer({ storage: storage });
 
 exports.createApartment = async (req, res) => {
   try {
+    upload.single("image")(req, res, async (err) => {
     let findZone = await Apartment.findOne({ name: req.body.name });
     console.log(req.body.name)
     if (findZone) {
       res.status(409).json({ message: "Apartment already exit.", status: 404, data: {} });
-    } else {
-      upload.single("image")(req, res, async (err) => {
+    }
         if (err) { return res.status(400).json({ msg: err.message }); }
         const fileUrl = req.file ? req.file.path : "";
         const data = { city: req.body.city, name: req.body.name, status: req.body.status, image: fileUrl };
@@ -42,7 +42,6 @@ exports.createApartment = async (req, res) => {
         const apartment = await Apartment.create(data);
         res.status(200).json({ message: "Apartment add successfully.", status: 200, data: apartment });
       })
-    }
 
   } catch (error) {
     res.status(500).json({ status: 500, message: "internal server error ", data: error.message, });
