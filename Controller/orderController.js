@@ -477,7 +477,7 @@ exports.allOrder = async (req, res) => {
       populate: {
         path: 'subcategory',
       },
-    }).populate('plan subscription userSubscription userMembership membership').populate('user');
+    }).populate('plan subscription userSubscription userMembership membership address').populate('user');
     res.json({ orders });
   } catch (error) {
     console.error("Error fetching orders:", error);
