@@ -230,11 +230,11 @@ exports.updateTowerBlock = async (req, res) => {
 exports.removeTowerBlock = async (req, res) => {
   try {
     const { id } = req.params;
-    const apartment = await Apartment.findById(id);
+    const apartment = await TowerBlock.findById(id);
     if (!apartment) {
       res.status(404).json({ message: "Apartment Not Found", status: 404, data: {} });
     } else {
-      await Apartment.findByIdAndDelete(apartment._id);
+      await TowerBlock.findByIdAndDelete(apartment._id);
       res.status(200).json({ message: "Apartment Deleted Successfully !" });
     }
   } catch (error) {
