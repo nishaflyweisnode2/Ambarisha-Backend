@@ -555,6 +555,26 @@ exports.orderStatus = async (req, res) => {
   }
 };
 
+exports.getOrderSummary = async (req, res) => {
+  try {
+    const totalOrders = await Order.countDocuments();
+    const deliveredOrders = await Order.countDocuments({ status: 'delivered' });
+    const unDeliveredOrders = await Order.countDocuments({ status: { $in: ['pending', 'confirmed', 'accepted', 'rejected', 'picked', 'checked', 'preparing', 'ready to deliver'] } });
+    const cancelledOrders = await Order.countDocuments({ status: 'rejected' });
+
+    const response = {
+      totalOrders,
+      deliveredOrders,
+      unDeliveredOrders,
+      cancelledOrders
+    };
+
+    res.status(200).json({ status: 200, data: response });
+  } catch (error) {
+    console.error("Error fetching order summary:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 exports.getAllOrdersCategories = async (req, res) => {
   try {

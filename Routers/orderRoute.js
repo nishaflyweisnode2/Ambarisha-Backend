@@ -11,6 +11,8 @@ router.get("/my", [authJwt.verifyToken, orderControllers.myOrder]);
 router.put("/status/:orderId", [orderControllers.orderStatus]);
 router.get("/order/category", [authJwt.verifyToken, orderControllers.getAllOrdersCategories]);
 router.get('/orders', [authJwt.verifyToken], orderControllers.getOrderHistory);
+router.get('/order-summary', orderControllers.getOrderSummary);
+
 
 // for admin
 router.get("/onetime/all", [orderControllers.onetimeAll]);
