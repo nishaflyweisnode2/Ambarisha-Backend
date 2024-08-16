@@ -385,6 +385,19 @@ exports.createSuggestedProduct = async (req, res) => {
 
 exports.getAllSuggestedProducts = async (req, res) => {
   try {
+    const userId = req.user.id;
+    const suggestedProducts = await SuggestedProduct.find({ user: userId }).populate('user', 'username email'); // Assuming user has 'username' and 'email' fields
+
+    return res.status(200).json({ status: 200, message: 'Suggested products retrieved successfully', data: suggestedProducts });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 500, message: 'Server error', error: error.message });
+  }
+};
+
+exports.getAllSuggestedProductsForAdmin = async (req, res) => {
+  try {
+    const userId = req.user.id;
     const suggestedProducts = await SuggestedProduct.find().populate('user', 'username email'); // Assuming user has 'username' and 'email' fields
 
     return res.status(200).json({ status: 200, message: 'Suggested products retrieved successfully', data: suggestedProducts });
@@ -474,7 +487,7 @@ exports.getRecycleBinItemsByUser = async (req, res) => {
 };
 exports.getAllRecycleBinItems = async (req, res) => {
   try {
-    const recycleBinItems = await RecycleBin.find();
+    const recycleBinItems = await RecycleBin.find().populate('user');
 
     return res.status(200).json({ status: 200, message: 'Recycle bin items retrieved', data: recycleBinItems });
   } catch (error) {
@@ -542,7 +555,7 @@ exports.createHoliday = async (req, res) => {
 
 exports.getAllHolidays = async (req, res) => {
   try {
-    const holidays = await Holiday.find();
+    const holidays = await Holiday.find().populate('userId');
     return res.status(200).json({ status: 200, data: holidays });
   } catch (error) {
     console.error(error);

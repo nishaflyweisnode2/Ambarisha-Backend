@@ -21,6 +21,7 @@ exports.addandremoveMoney = async (req, res) => {
         user: req.user.id,
         transactionType: "add",
         amount: balance,
+        status: req.body.status
       });
 
       await transaction.save();
@@ -37,6 +38,8 @@ exports.addandremoveMoney = async (req, res) => {
         user: req.user.id,
         transactionType: "remove",
         amount: balance,
+        status: req.body.status
+
       });
 
       await transaction.save();

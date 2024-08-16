@@ -1,6 +1,6 @@
 const express = require("express");
 const {
-  registerUser, loginUser, allUser, registerAdmin, verifyAdmin, deleteUser, loginAdmin, logout, verifyadminlogin, socialLogin, getUserDetails, verifyOtp, verifyOtplogin, updateProfile, updateLocation, createSuggestedProduct, getAllSuggestedProducts, getSuggestedProductById, updateSuggestedProduct, deleteSuggestedProduct, addToRecycleBin, getRecycleBinItemsByUser, getAllRecycleBinItems, approveVoucher, deleteRecycleBinItem, createHoliday, getAllHolidays, getAllHolidaysByUserToken, updateHoliday, deleteHoliday, updateUserNotifications, deleteAccount, verifyOtpForDelete, resendOTPForDelete, createUserOrderIssue, getAllUserOrderIssues, getUserOrderIssueById, updateUserOrderIssue, deleteUserOrderIssue, getAllUserOrderByIssues, revokeIssue, resendOTP
+  registerUser, loginUser, allUser, registerAdmin, verifyAdmin, deleteUser, loginAdmin, logout, verifyadminlogin, socialLogin, getUserDetails, verifyOtp, verifyOtplogin, updateProfile, updateLocation, createSuggestedProduct, getAllSuggestedProducts, getAllSuggestedProductsForAdmin, getSuggestedProductById, updateSuggestedProduct, deleteSuggestedProduct, addToRecycleBin, getRecycleBinItemsByUser, getAllRecycleBinItems, approveVoucher, deleteRecycleBinItem, createHoliday, getAllHolidays, getAllHolidaysByUserToken, updateHoliday, deleteHoliday, updateUserNotifications, deleteAccount, verifyOtpForDelete, resendOTPForDelete, createUserOrderIssue, getAllUserOrderIssues, getUserOrderIssueById, updateUserOrderIssue, deleteUserOrderIssue, getAllUserOrderByIssues, revokeIssue, resendOTP
 } = require("../Controller/userController");
 const { upload, orderIssueImage } = require("../middleware/imageUpload");
 
@@ -33,6 +33,8 @@ router.put("/updateLocation", [authJwt.verifyToken], updateLocation);
 router.post('/suggested-products', [authJwt.verifyToken], createSuggestedProduct);
 
 router.get('/suggested-products', [authJwt.verifyToken], getAllSuggestedProducts);
+
+router.get('/suggested-products/forAdmin', [authJwt.verifyToken], getAllSuggestedProductsForAdmin);
 
 router.get('/suggested-products/:productId', [authJwt.verifyToken], getSuggestedProductById);
 
