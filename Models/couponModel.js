@@ -23,7 +23,11 @@ const couponSchema = new mongoose.Schema({
   },
   endDate: {
     type: Date,
-  }
+  },
+  usedInOrder: {
+    type: Boolean,
+    default: false,
+},
 });
 
 module.exports = mongoose.model("Coupon", couponSchema);

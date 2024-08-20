@@ -54,6 +54,16 @@ router.get('/admin/packaging', [authJwt.isAdmin], auth.getAllPackagingCharges);
 router.get('/admin/packaging/:id', [authJwt.isAdmin], auth.getPackagingChargeById);
 router.put('/admin/packaging/:id', [authJwt.isAdmin], auth.updatePackagingChargeById);
 router.delete('/admin/packaging/:id', [authJwt.isAdmin], auth.deletePackagingChargeById);
-
+router.post('/admin/hubs', [authJwt.isAdmin], auth.createHub);
+router.get('/admin/hubs', [authJwt.isAdmin], auth.getAllHubs);
+router.get('/admin/hubs/:id', [authJwt.isAdmin], auth.getHubById);
+router.put('/admin/hubs/:id', [authJwt.isAdmin], auth.updateHub);
+router.delete('/admin/hubs/:id', [authJwt.isAdmin], auth.deleteHub);
+router.post('/admin/clusters', [authJwt.isAdmin], auth.createCluster);
+router.get('/admin/clusters', [authJwt.isAdmin], auth.getAllClusters);
+router.get('/admin/clusters/:id', [authJwt.isAdmin], auth.getClusterById);
+router.put('/admin/clusters/:id', [authJwt.isAdmin], auth.updateClusterById);
+router.delete('/admin/clusters/:id', [authJwt.isAdmin], auth.deleteClusterById);
+router.put('/admin/update-user/:id', [authJwt.isAdmin], auth.updateUserVerification);
 
 module.exports = router;

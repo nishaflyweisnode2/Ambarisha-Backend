@@ -55,6 +55,10 @@ const cartSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    isCouponApplied: {
+      type: Boolean,
+      default: false
+    },
     shippingAmount: {
       type: Number,
       default: 0,

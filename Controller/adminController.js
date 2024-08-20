@@ -17,6 +17,10 @@ const ContactInformation = require('../Models/ContactusModel');
 const CartMinimumPrice = require('../Models/cartMinimumPriceModel');
 const AdminIssue = require('../Models/issueModel');
 const PackagingCharge = require('../Models/packagingModel');
+const Hub = require('../Models/hubModel');
+const Cluster = require('../Models/clusterModel');
+const UserSubscription = require('../Models/userSubscriptionModel');
+const UserMembership = require('../Models/userMemberShipModel');
 
 
 
@@ -96,7 +100,7 @@ exports.update = async (req, res) => {
     }
 };
 
-exports.getAllUser = async (req, res) => {
+exports.getAllUser1 = async (req, res) => {
     try {
         const users = await User.find()/*.populate('city');*/
         if (!users || users.length === 0) {
@@ -112,6 +116,43 @@ exports.getAllUser = async (req, res) => {
                 year: 'numeric',
             }),
         }));
+
+        return res.status(200).json({
+            status: 200,
+            data: formattedUsers,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 500, error: 'Internal Server Error' });
+    }
+};
+
+exports.getAllUser = async (req, res) => {
+    try {
+        const users = await User.find();
+        const userMemberships = await UserMembership.find().populate('userId membershipId');
+        const subs = await UserSubscription.find().populate('productId planId subId userId');
+
+        if (!users || users.length === 0) {
+            return res.status(404).json({ status: 404, message: 'Users not found' });
+        }
+
+        const formattedUsers = users.map(user => {
+            const userMembership = userMemberships.filter(membership => membership.userId._id.toString() === user._id.toString());
+            const userSubscriptions = subs.filter(sub => sub.userId._id.toString() === user._id.toString());
+
+            return {
+                _id: user._id,
+                user: user,
+                memberSince: user.createdAt.toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'numeric',
+                    year: 'numeric',
+                }),
+                memberships: userMembership,
+                subscriptions: userSubscriptions
+            };
+        });
 
         return res.status(200).json({
             status: 200,
@@ -817,3 +858,179 @@ exports.deletePackagingChargeById = async (req, res) => {
         return res.status(500).json({ status: 500, error: 'Internal server error' });
     }
 };
+
+exports.createHub = async (req, res) => {
+    try {
+        const { name, city, address, status } = req.body;
+        const newHub = new Hub({ name, city, address, status });
+
+        await newHub.save();
+
+        return res.status(201).json({ status: 201, message: 'Hub created successfully', data: newHub });
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: 'Failed to create hub', error: error.message });
+    }
+};
+
+exports.getAllHubs = async (req, res) => {
+    try {
+        const hubs = await Hub.find().populate('city');
+
+        return res.status(200).json({ status: 200, message: 'Hubs retrieved successfully', data: hubs });
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: 'Failed to retrieve hubs', error: error.message });
+    }
+};
+
+exports.getHubById = async (req, res) => {
+    try {
+        const hub = await Hub.findById(req.params.id).populate('city');
+
+        if (!hub) {
+            return res.status(404).json({ status: 404, message: 'Hub not found' });
+        }
+
+        return res.status(200).json({ status: 200, message: 'Hub retrieved successfully', data: hub });
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: 'Failed to retrieve hub', error: error.message });
+    }
+};
+
+exports.updateHub = async (req, res) => {
+    try {
+        const updatedHub = await Hub.findByIdAndUpdate(
+            req.params.id,
+            { $set: req.body },
+            { new: true }
+        );
+
+        if (!updatedHub) {
+            return res.status(404).json({ status: 404, message: 'Hub not found' });
+        }
+
+        return res.status(200).json({ status: 200, message: 'Hub updated successfully', data: updatedHub });
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: 'Failed to update hub', error: error.message });
+    }
+};
+
+exports.deleteHub = async (req, res) => {
+    try {
+        const deletedHub = await Hub.findByIdAndDelete(req.params.id);
+
+        if (!deletedHub) {
+            return res.status(404).json({ status: 404, message: 'Hub not found' });
+        }
+
+        return res.status(200).json({ status: 200, message: 'Hub deleted successfully' });
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: 'Failed to delete hub', error: error.message });
+    }
+};
+
+exports.createCluster = async (req, res) => {
+    try {
+        const { clusterName, clusterNumber, hubName, dwcCluster, clusterType, loadingTimeStart, loadingTimeOut, recceDistance } = req.body;
+        const newCluster = new Cluster({
+            clusterName,
+            clusterNumber,
+            hubName,
+            dwcCluster,
+            clusterType,
+            loadingTimeStart,
+            loadingTimeOut,
+            recceDistance
+        });
+
+        await newCluster.save();
+
+        return res.status(201).json({ status: 201, message: 'Cluster created successfully', data: newCluster });
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: 'Failed to create cluster', error: error.message });
+    }
+};
+
+exports.getAllClusters = async (req, res) => {
+    try {
+        const clusters = await Cluster.find().populate('hubName');
+        return res.status(200).json({ status: 200, message: 'Clusters retrieved successfully', data: clusters });
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: 'Failed to retrieve clusters', error: error.message });
+    }
+};
+
+exports.getClusterById = async (req, res) => {
+    try {
+        const cluster = await Cluster.findById(req.params.id).populate('hubName');
+        if (!cluster) {
+            return res.status(404).json({ status: 404, message: 'Cluster not found' });
+        }
+        return res.status(200).json({ status: 200, message: 'Cluster retrieved successfully', data: cluster });
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: 'Failed to retrieve cluster', error: error.message });
+    }
+};
+
+exports.updateClusterById = async (req, res) => {
+    try {
+        const { clusterName, clusterNumber, hubName, dwcCluster, clusterType, loadingTimeStart, loadingTimeOut, recceDistance } = req.body;
+        const updatedCluster = await Cluster.findByIdAndUpdate(
+            req.params.id,
+            { clusterName, clusterNumber, hubName, dwcCluster, clusterType, loadingTimeStart, loadingTimeOut, recceDistance },
+            { new: true }
+        ).populate('hubName');
+
+        if (!updatedCluster) {
+            return res.status(404).json({ status: 404, message: 'Cluster not found' });
+        }
+
+        return res.status(200).json({ status: 200, message: 'Cluster updated successfully', data: updatedCluster });
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: 'Failed to update cluster', error: error.message });
+    }
+};
+
+exports.deleteClusterById = async (req, res) => {
+    try {
+        const deletedCluster = await Cluster.findByIdAndDelete(req.params.id);
+
+        if (!deletedCluster) {
+            return res.status(404).json({ status: 404, message: 'Cluster not found' });
+        }
+
+        return res.status(200).json({ status: 200, message: 'Cluster deleted successfully' });
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: 'Failed to delete cluster', error: error.message });
+    }
+};
+
+exports.updateUserVerification = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { isVerified } = req.query;
+        console.log('req.query:', req.query);
+        console.log('Updating user:', id);
+        console.log('New isVerified value:', isVerified);
+
+        const isVerifiedBool = isVerified === 'true';
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ status: 404, message: 'User not found' });
+        }
+        user.isVerified = isVerifiedBool;
+        const updatedUser = await user.save();
+
+        return res.status(200).json({
+            status: 200,
+            message: 'User verification status updated successfully',
+            data: updatedUser
+        });
+    } catch (error) {
+        console.error('Error updating user:', error);
+        return res.status(500).json({ status: 500, error: 'Internal Server Error' });
+    }
+};
+
+
+

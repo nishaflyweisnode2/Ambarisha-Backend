@@ -428,7 +428,7 @@ cron.schedule('* * * * *', () => {
 exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
-    const userId = req.user.id;
+    const userId = req.user.id;    
 
     const user = await User.findById(userId);
     if (!user) {
@@ -499,7 +499,7 @@ exports.addToCart = async (req, res) => {
     const taxRate = (await Tax.findOne({}))?.tax || 0;
     const taxAmount = subTotalAmount * (taxRate / 100);
 
-    const roundedTaxAmount = parseFloat(taxAmount.toFixed(2));
+    const roundedTaxAmount = parseFloat(taxAmount.toFixed());
 
     const cartMinimumPrices = await CartMinimumPrice.findOne({});
     if (!cartMinimumPrices) {
@@ -821,24 +821,41 @@ exports.applyCoupon = async (req, res) => {
       return res.status(404).json({ status: 404, message: "Cart not found" });
     }
 
-    const coupon = await Coupon.findOne({ code: couponCode });
+    if (cart.isCouponApplied) {
+      return res.status(400).json({ status: 400, message: 'Coupon has already been applied to this cart', data: null });
+    }
+
+    const coupon = await Coupon.findOne({ couponCode: couponCode });
     if (!coupon) {
       return res.status(404).json({ status: 404, message: "Coupon not found" });
     }
+    console.log(coupon.endDate, new Date());
+    
+    if (!coupon || new Date(coupon.endDate) < new Date()) {
+      return res.status(400).json({ status: 400, message: 'Invalid or expired coupon code', data: null });
+    }
 
-    cart.subtotal = cart.subtotal || 0;
-    cart.taxAmount = cart.taxAmount || 0;
-    cart.deliveryCharge = cart.deliveryCharge || 0;
+    const previousOrder = await Order.find({ userId: req.user.id, offerCode: couponCode });
+    if (previousOrder.length > 0) {
+      return res.status(400).json({ status: 400, message: 'You have already used this coupon code in a previous Order', data: null });
+    }
 
-    const discountAmount = (cart.subtotal * coupon.discount) / 100;
+    cart.subtotal = cart.subtotal.toFixed() || 0;
+    cart.taxAmount = cart.taxAmount.toFixed() || 0;
+    cart.deliveryCharge = cart.deliveryCharge.toFixed() || 0;
 
-    const totalAmount = cart.subtotal - discountAmount + cart.taxAmount + cart.deliveryCharge;
+    const discountAmount = ((cart.subtotal * coupon.discount) / 100).toFixed();
+
+    const totalAmount = (cart.subtotal - discountAmount + cart.taxAmount + cart.deliveryCharge + cart.packagingCharge).toFixed();
 
     cart.couponCode = coupon.code;
     cart.couponDiscount = discountAmount;
     cart.totalAmount = totalAmount;
+    cart.isCouponApplied = true;
+    coupon.usedInOrder = true;
 
     await cart.save();
+    await coupon.save();
 
     return res.status(200).json({ status: 200, message: "Coupon applied successfully", data: cart });
   } catch (error) {
@@ -862,18 +879,19 @@ exports.removeCoupon = async (req, res) => {
     }
 
     // Ensure that all necessary fields are initialized
-    cart.subtotal = cart.subtotal || 0;
-    cart.taxAmount = cart.taxAmount || 0;
-    cart.deliveryCharge = cart.deliveryCharge || 0;
+    cart.subtotal = cart.subtotal.toFixed() || 0;
+    cart.taxAmount = cart.taxAmount.toFixed() || 0;
+    cart.deliveryCharge = cart.deliveryCharge.toFixed() || 0;
 
     // Restore the original total amount by adding the coupon discount back
-    const totalAmount = cart.subtotal + cart.couponDiscount + cart.taxAmount + cart.deliveryCharge;
+    const totalAmount = (cart.subtotal + cart.taxAmount + cart.deliveryCharge + cart.packagingCharge).toFixed();
 
-    // Remove coupon details from the cart
-    cart.subtotal += cart.couponDiscount;
+    // cart.subtotal /*+= cart.couponDiscount*/;
     cart.couponCode = "";
     cart.couponDiscount = 0;
     cart.totalAmount = totalAmount;
+    cart.isCouponApplied = false;
+    // coupon.usedInOrder = true;
 
     await cart.save();
 

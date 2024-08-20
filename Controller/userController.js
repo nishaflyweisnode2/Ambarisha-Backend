@@ -511,6 +511,12 @@ exports.approveVoucher = async (req, res) => {
     recycleBinItem.status = 'Approved';
     await recycleBinItem.save();
 
+    if (recycleBinItem.status = 'Approved') {
+      const user1 = await User.findById(recycleBinItem.user);
+      user1.wallet = (user1.wallet || 0) + voucherAmount;
+      await user1.save();
+    }
+
     return res.status(200).json({ status: 200, message: 'Voucher amount approved successfully', data: recycleBinItem });
   } catch (error) {
     console.error('Error approving voucher amount:', error);
@@ -889,6 +895,13 @@ exports.updateUserOrderIssue = async (req, res) => {
     if (!userOrderIssue) {
       return res.status(404).json({ message: 'User order issue not found' });
     }
+
+    if (updateData.amount) {
+      const user1 = await User.findById(userOrderIssue.userId);
+      user1.wallet = (user1.wallet || 0) + updateData.amount;
+      await user1.save();
+    }
+
     res.status(200).json({ message: 'User order issue updated successfully', data: userOrderIssue });
   } catch (error) {
     console.error('Error updating user order issue:', error);

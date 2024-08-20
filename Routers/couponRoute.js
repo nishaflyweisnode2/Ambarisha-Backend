@@ -5,7 +5,8 @@ const router = express();
 const authJwt = require("../middleware/authJwt");
 
 router.post('/',[ couponControllers.AddCoupon]);
-router.get('/',[  couponControllers.getCoupon]);
+router.get('/',[  [authJwt.verifyToken], couponControllers.getCoupon]);
+router.get('/all',[  couponControllers.getAllCoupon]);
 router.put('/update/:couponId',[  couponControllers.updateCoupon]);
 
 router.delete('/:couponId',[ couponControllers.deleteCoupon])

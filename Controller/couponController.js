@@ -1,6 +1,7 @@
 const Coupon = require('../Models/couponModel')
 const Category = require("../Models/categoryModel");
 const Product = require("../Models/productModel");
+const User = require("../Models/userModel");
 
 
 exports.AddCoupon = async (req, res) => {
@@ -24,15 +25,40 @@ exports.AddCoupon = async (req, res) => {
   }
 };
 
+exports.getAllCoupon = async (req, res) => {
+  try {
+
+    const coupons = await Coupon.find();
+    return res.json(coupons);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to get coupons' });
+  }
+};
+
 exports.getCoupon = async (req, res) => {
   try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: 'User not found' });
+    }
     // Find all coupons in the database
     const coupons = await Coupon.find();
 
-    res.json(coupons);
+    const validCoupons = coupons.filter(coupon => {
+      const expirationDate = new Date(coupon.endDate);
+      const currentDate = new Date();
+      const isExpired = coupon.endDate && expirationDate <= currentDate;
+
+      const isUsed = coupon.usedInBooking;
+
+      return !isExpired && !isUsed;
+    });
+    return res.json({ status: 200, data: validCoupons });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to get coupons' });
+    return res.status(500).json({ error: 'Failed to get coupons' });
   }
 };
 

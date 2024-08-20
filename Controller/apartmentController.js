@@ -24,24 +24,24 @@ const upload = multer({ storage: storage });
 exports.createApartment = async (req, res) => {
   try {
     upload.single("image")(req, res, async (err) => {
-    let findZone = await Apartment.findOne({ name: req.body.name });
-    console.log(req.body.name)
-    if (findZone) {
-      res.status(409).json({ message: "Apartment already exit.", status: 404, data: {} });
-    }
-        if (err) { return res.status(400).json({ msg: err.message }); }
-        const fileUrl = req.file ? req.file.path : "";
-        const data = { city: req.body.city, name: req.body.name, status: req.body.status, image: fileUrl };
+      let findZone = await Apartment.findOne({ name: req.body.name });
+      console.log(req.body.name)
+      if (findZone) {
+        res.status(409).json({ message: "Apartment already exit.", status: 404, data: {} });
+      }
+      if (err) { return res.status(400).json({ msg: err.message }); }
+      const fileUrl = req.file ? req.file.path : "";
+      const data = { city: req.body.city, cluster: req.body.cluster, name: req.body.name, status: req.body.status, image: fileUrl };
 
-        if (req.body.city) {
-          const city = await City.findById(req.body.city);
-          if (!city) {
-            return res.status(404).json({ message: 'City not found' });
-          }
+      if (req.body.city) {
+        const city = await City.findById(req.body.city);
+        if (!city) {
+          return res.status(404).json({ message: 'City not found' });
         }
-        const apartment = await Apartment.create(data);
-        res.status(200).json({ message: "Apartment add successfully.", status: 200, data: apartment });
-      })
+      }
+      const apartment = await Apartment.create(data);
+      res.status(200).json({ message: "Apartment add successfully.", status: 200, data: apartment });
+    })
 
   } catch (error) {
     res.status(500).json({ status: 500, message: "internal server error ", data: error.message, });
@@ -50,7 +50,7 @@ exports.createApartment = async (req, res) => {
 
 exports.getApartment = async (req, res) => {
   try {
-    const apartment = await Apartment.find({}).populate('city');
+    const apartment = await Apartment.find({}).populate('city cluster');
     res.status(201).json({ success: true, apartment, });
   } catch (error) {
     res.status(500).json({ status: 500, message: "internal server error ", data: error.message, });
@@ -65,7 +65,7 @@ exports.getApartmentByCityId = async (req, res) => {
     if (!city) {
       return res.status(404).json({ status: 404, message: 'City not found' });
     }
-    const apartment = await Apartment.find({ city: cityId }).populate('city');
+    const apartment = await Apartment.find({ city: cityId }).populate('city cluster');
 
     return res.status(201).json({ status: 200, data: apartment, });
   } catch (error) {
@@ -97,6 +97,7 @@ exports.updateApartment = async (req, res) => {
       const fileUrl = req.file ? req.file.path : "";
       apartment.image = fileUrl || apartment.image;
       apartment.city = req.body.city || apartment.city;
+      apartment.cluster = req.body.cluster || apartment.cluster;
       apartment.name = req.body.name || apartment.name;
       apartment.status = req.body.status || apartment.status;
 
@@ -122,7 +123,6 @@ exports.removeApartment = async (req, res) => {
     res.status(500).json({ status: 500, message: "internal server error ", data: error.message, });
   }
 };
-
 
 exports.createTowerBlock = async (req, res) => {
   try {
@@ -157,7 +157,13 @@ exports.createTowerBlock = async (req, res) => {
 
 exports.getTowerBlock = async (req, res) => {
   try {
-    const apartment = await TowerBlock.find({}).populate('apartment city');
+    const apartment = await TowerBlock.find({}).populate('city').populate({
+      path: 'apartment',
+      populate: [
+        { path: 'city' },
+        { path: 'cluster', populate: { path: 'hubName', populate: { path: 'city', } } }
+      ]
+    });
     res.status(201).json({ success: true, apartment, });
   } catch (error) {
     res.status(500).json({ status: 500, message: "internal server error ", data: error.message, });
@@ -172,7 +178,13 @@ exports.getTowerBlockByCityId = async (req, res) => {
     if (!city) {
       return res.status(404).json({ status: 404, message: 'City not found' });
     }
-    const apartment = await TowerBlock.find({ city: cityId }).populate('apartment city');
+    const apartment = await TowerBlock.find({ city: cityId }).populate('city').populate({
+      path: 'apartment',
+      populate: [
+        { path: 'city' },
+        { path: 'cluster', populate: { path: 'hubName', populate: { path: 'city', } } }
+      ]
+    });
 
     return res.status(201).json({ status: 200, data: apartment, });
   } catch (error) {
@@ -188,7 +200,13 @@ exports.getTowerBlockByApartmentId = async (req, res) => {
     if (!apartment) {
       return res.status(404).json({ status: 404, message: 'Apartment not found' });
     }
-    const tower = await TowerBlock.find({ apartment: apartmentId }).populate('apartment city');
+    const tower = await TowerBlock.find({ apartment: apartmentId }).populate('city').populate({
+      path: 'apartment',
+      populate: [
+        { path: 'city' },
+        { path: 'cluster', populate: { path: 'hubName', populate: { path: 'city', } } }
+      ]
+    });
 
     return res.status(201).json({ status: 200, data: tower, });
   } catch (error) {
