@@ -89,29 +89,26 @@ const { createCanvas, loadImage } = require('canvas');
 const fs = require('fs');
 const QRCode = require('qrcode');
 
-app.use('/stickers', express.static(path.join(__dirname, 'stickers')));
-const uploadsDir = 'uploads';
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
-}
+const tmpDir = '/tmp';
+
+app.use('/stickers', express.static(tmpDir));
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, uploadsDir);
+        cb(null, tmpDir);
     },
     filename: function (req, file, cb) {
         cb(null, Date.now() + path.extname(file.originalname));
     }
 });
 const upload = multer({ storage: storage });
+
 app.post('/upload-excel', upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
     }
-
-    const filePath = req.file.path;
-
     try {
-        const workbook = XLSX.readFile(filePath);
+        const workbook = XLSX.readFile(req.file.path);
         const sheet_name_list = workbook.SheetNames;
         const worksheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
 
@@ -128,35 +125,24 @@ app.post('/upload-excel', upload.single('file'), async (req, res) => {
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 20px Arial';
 
-            console.log('Data for sticker:', data);
-
             ctx.fillText(`HUB Name: ${data['HUB Name'] || data['HUB  Name'] || 'HUB Name'}`, 20, 50);
-
             ctx.fillText(`Company: ${data['Company name'] || 'Company Name'}`, 20, 90);
-
             ctx.fillText(`Fssai No: ${data['Fssai Number'] || 'Fssai Number'}`, 20, 130);
-
             ctx.fillText(`Product: ${data['Product Name'] || data['Product Name '] || 'Product Name'}`, 20, 170);
-
             ctx.fillText(`SKU No: ${data['SKU Number'] || 'SKU Number'}`, 20, 210);
-
             ctx.fillText(`Weight: ${data['Weight'] || 'Weight'}`, 20, 250);
 
-            const qrCodeData = `HUB Name: ${data['HUB Name'] || data['HUB  Name'] || 'HUB Name'}, Company Name: ${data['Company name']}, Product: ${data['Product Name'] || data['Product Name '] || 'Product Name'}`;
+            const qrCodeData = `HUB Name: ${data['HUB Name']}, Company Name: ${data['Company name']}, Product: ${data['Product Name']}`;
             const qrCodeImage = await QRCode.toDataURL(qrCodeData);
 
             const qrImg = await loadImage(qrCodeImage);
             ctx.drawImage(qrImg, 350, 50, 100, 100);
 
             const buffer = canvas.toBuffer('image/png');
-            const stickerPath = path.join('stickers', `sticker_${index + 1}.png`);
+            const stickerPath = path.join(tmpDir, `sticker_${index + 1}.png`);
             fs.writeFileSync(stickerPath, buffer);
             return stickerPath;
         };
-
-        if (!fs.existsSync('stickers')) {
-            fs.mkdirSync('stickers');
-        }
 
         const stickerPaths = await Promise.all(worksheet.map((row, index) => createSticker(row, index)));
 
@@ -169,7 +155,7 @@ app.post('/upload-excel', upload.single('file'), async (req, res) => {
             stickers: stickerUrls
         });
 
-        fs.unlinkSync(filePath);
+        fs.unlinkSync(req.file.path);
     } catch (error) {
         console.error('Error processing the file:', error);
         res.status(500).json({ message: 'Error processing the file', error: error.message });
