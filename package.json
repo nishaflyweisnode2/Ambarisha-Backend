@@ -34,6 +34,7 @@
     "otp-generators": "^1.0.3",
     "path": "^0.12.7",
     "pdfkit-table": "^0.1.99",
+    "qrcode": "^1.5.4",
     "randomatic": "^3.1.1",
     "serverless": "^3.38.0",
     "serverless-http": "^3.2.0",
