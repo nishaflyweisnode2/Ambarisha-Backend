@@ -5,7 +5,6 @@ const mongooseAggregatePaginate = require("mongoose-aggregate-paginate");
 const productSchema = mongoose.Schema({
   name: {
     type: String,
-    required: true,
   },
   unit: {
     type: String,
@@ -17,25 +16,24 @@ const productSchema = mongoose.Schema({
   originalPrice: {
     type: Number,
     default: 0
-},
-discountPrice: {
+  },
+  discountPrice: {
     type: Number,
     default: 0
-},
-discount: {
+  },
+  discount: {
     type: Number,
     default: 0
-},
-discountActive: {
+  },
+  discountActive: {
     type: Boolean,
     default: false
-},
+  },
   description: {
     type: String,
   },
   images: {
     type: [String],
-    required: true,
   },
   category: {
     type: String,
@@ -69,19 +67,15 @@ discountActive: {
       user: {
         type: mongoose.Schema.ObjectId,
         ref: "User",
-        required: true,
       },
       name: {
         type: String,
-        required: true,
       },
       rating: {
         type: Number,
-        required: true,
       },
       comment: {
         type: String,
-        required: true,
       },
     },
   ],
