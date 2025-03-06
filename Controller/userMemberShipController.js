@@ -20,6 +20,7 @@ exports.createUserMembership = async (req, res) => {
 
         const existingMembership = await UserMembership.findOne({
             userId: user._id,
+            isActive: true,
             endDate: { $gte: new Date() }
         });
 
@@ -38,6 +39,7 @@ exports.createUserMembership = async (req, res) => {
 
         const usedPromoCodes = await UserMembership.find({
             userId: user._id,
+            isActive: true,
             promoCode: promoCode
         });
 
@@ -150,17 +152,17 @@ exports.updateUserMembershipById = async (req, res) => {
 
         userMembership.set(req.body);
 
-        if(req.body.status === "Completed"){
-        let walletAmount = user.wallet;
-        console.log("walletAmount", walletAmount);
-        if (walletAmount < userMembership.pricePaid) {
-            return res.status(400).json({ status: 400, message: "Insufficient funds in your wallet" });
+        if (req.body.status === "Completed") {
+            let walletAmount = user.wallet;
+            console.log("walletAmount", walletAmount);
+            if (walletAmount < userMembership.pricePaid) {
+                return res.status(400).json({ status: 400, message: "Insufficient funds in your wallet" });
+            }
+            let newWalletAmount = walletAmount - userMembership.pricePaid;
+            user.wallet = newWalletAmount;
+            console.log("newWalletAmount", newWalletAmount);
+            await user.save();
         }
-        let newWalletAmount = walletAmount - userMembership.pricePaid;
-        user.wallet = newWalletAmount;
-        console.log("newWalletAmount", newWalletAmount);
-        await user.save();
-    }
 
         userMembership = await userMembership.save();
 
