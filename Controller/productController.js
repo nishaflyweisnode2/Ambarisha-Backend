@@ -673,3 +673,45 @@ exports.paginateProductSearch = async (req, res) => {
     return res.status(500).send({ msg: "internal server error ", error: err.message, });
   }
 };
+
+exports.createSubscriptionForProduct = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const { productId } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({ status: 400, message: "Product ID is required" });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ status: 404, message: "Product not found" });
+    }
+
+    const plans = await Plan.find();
+    if (!plans.length) {
+      return res.status(404).json({ status: 404, message: "No plans available" });
+    }
+
+    const subscriptions = plans.map(plan => ({
+      productId: product._id,
+      planId: plan._id,
+      weight: product.unit,
+      status: false,
+    }));
+
+    await Subs.insertMany(subscriptions);
+
+    return res.status(200).json({
+      message: "Subscriptions created successfully.",
+      status: 200,
+      data: subscriptions,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      status: 500,
+      message: "Internal server error",
+      data: error.message,
+    });
+  }
+});

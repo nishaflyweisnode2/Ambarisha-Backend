@@ -24,6 +24,7 @@ const {
   deleteProductOffer,
   getAllProductsWithOffers,
   paginateProductSearch,
+  createSubscriptionForProduct,
 } = require("../Controller/productController");
 const authJwt = require("../middleware/authJwt");
 const {
@@ -69,6 +70,9 @@ router.delete('/products/:productId/offers/:offerId', [authJwt.isAdmin], deleteP
 router.get('/products/all/offers/product', getAllProductsWithOffers);
 
 router.get("/product/all/paginateProductSearch", paginateProductSearch);
+
+router.post("/create-subscriptions", createSubscriptionForProduct);
+
 
 
 
