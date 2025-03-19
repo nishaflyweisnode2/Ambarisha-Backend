@@ -428,7 +428,7 @@ cron.schedule('* * * * *', () => {
 exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
-    const userId = req.user.id;    
+    const userId = req.user.id;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -565,7 +565,7 @@ exports.getCart = async (req, res) => {
   }
 };
 
-exports.updateCartItemQuantity = async (req, res) => {
+exports.updateCartItemQuantity1 = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     const userId = req.user.id;
@@ -644,83 +644,61 @@ exports.updateCartItemQuantity = async (req, res) => {
   }
 };
 
-exports.updateCartItemQuantity1 = async (req, res) => {
+exports.updateCartItemQuantity = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     const userId = req.user.id;
 
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ status: 404, message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ status: 404, message: "User not found" });
 
     const cart = await Cart.findOne({ userId });
-    if (!cart) {
-      return res.status(404).json({ status: 404, message: "Cart not found" });
-    }
+    if (!cart) return res.status(404).json({ status: 404, message: "Cart not found" });
 
     const existingProduct = cart.products.find(item => item.productId.equals(productId));
-    if (!existingProduct) {
-      return res.status(404).json({ status: 404, message: "Product not found in the cart" });
-    }
+    if (!existingProduct) return res.status(404).json({ status: 404, message: "Product not found in the cart" });
 
     const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ status: 404, message: "Product not found" });
-    }
+    if (!product) return res.status(404).json({ status: 404, message: "Product not found" });
 
     const price = product.discountActive ? product.discountPrice : product.originalPrice;
 
     existingProduct.quantity = quantity;
 
-    const subTotalAmount = cart.products.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+    const subTotalAmount = cart.products.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
     console.log('Subtotal:', subTotalAmount);
 
     const taxRate = await Tax.findOne({});
-    if (!taxRate) {
-      return res.status(404).json({ status: 404, message: "Tax not found" });
-    }
+    if (!taxRate) return res.status(404).json({ status: 404, message: "Tax not found" });
+
     const taxRateDecimal = taxRate.tax / 100;
     let taxAmount = subTotalAmount * taxRateDecimal;
+
+    taxAmount = isNaN(taxAmount) || !isFinite(taxAmount) ? 0 : Math.round(taxAmount);
     console.log('Tax Amount:', taxAmount);
 
     cart.subtotal = subTotalAmount;
-    cart.taxAmount = Math.round(taxAmount);
-    cart.totalAmount = subTotalAmount + cart.taxAmount;
+    cart.taxAmount = taxAmount;
 
     const cartMinimumPrices = await CartMinimumPrice.findOne({});
-    if (!cartMinimumPrices) {
-      return res.status(404).json({ status: 404, message: "Cart minimum prices not found" });
-    }
+    if (!cartMinimumPrices) return res.status(404).json({ status: 404, message: "Cart minimum prices not found" });
 
-    let deliveryCharge = cart.deliveryCharge;
-    if (subTotalAmount <= cartMinimumPrices.minimumPrice) {
-      deliveryCharge = cartMinimumPrices.deliveryCharge;
-    } else {
-      deliveryCharge = 0;
-    }
+    let deliveryCharge = subTotalAmount <= cartMinimumPrices.minimumPrice ? cartMinimumPrices.deliveryCharge : 0;
 
-    const packagingRate = await PackagingCharge.findOne({});
-    if (packagingRate) {
-      cart.packagingCharge = packagingRate.oldAmount;
-    } else {
-      cart.packagingCharge = 0;
-    }
-
-    cart.totalAmount = subTotalAmount + cart.taxAmount + deliveryCharge + cart.packagingCharge;
     cart.deliveryCharge = deliveryCharge;
 
-    const walletAmount = user.wallet;
-    console.log(walletAmount);
-    console.log(cart.totalAmount);
+    cart.totalAmount = subTotalAmount + taxAmount + deliveryCharge;
+    cart.totalAmount = isNaN(cart.totalAmount) || !isFinite(cart.totalAmount) ? 0 : cart.totalAmount;
 
-    if (walletAmount < cart.totalAmount) {
-      return res.status(400).json({ status: 400, message: "Insufficient funds in wallet" });
-    }
+    console.log('Total Amount:', cart.totalAmount);
+
+    const walletAmount = user.wallet;
+    if (walletAmount < cart.totalAmount) return res.status(400).json({ status: 400, message: "Insufficient funds in wallet" });
 
     await cart.save();
 
     return res.status(200).json({ status: 200, message: 'Cart quantity updated successfully', data: cart });
+
   } catch (error) {
     console.error('Error updating cart quantity:', error);
     return res.status(500).json({ status: 500, error: 'Internal server error' });
@@ -830,7 +808,7 @@ exports.applyCoupon = async (req, res) => {
       return res.status(404).json({ status: 404, message: "Coupon not found" });
     }
     console.log(coupon.endDate, new Date());
-    
+
     if (!coupon || new Date(coupon.endDate) < new Date()) {
       return res.status(400).json({ status: 400, message: 'Invalid or expired coupon code', data: null });
     }
