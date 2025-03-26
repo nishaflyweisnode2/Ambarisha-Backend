@@ -380,10 +380,21 @@ const createOrdersFromCartsAuto = async () => {
 
 // Schedule the cron job to run every day at 12 PM
 // cron.schedule('0 18 * * *', () => {
-cron.schedule('* * * * *', () => {
-  console.log('Running cron job to check Order create by cart sucessfully ');
-  createOrdersFromCartsAuto();
-});
+// cron.schedule('* * * * *', () => {
+//   console.log('Running cron job to check Order create by cart sucessfully ');
+//   createOrdersFromCartsAuto();
+// });
+
+const intervalMinutes1 = 1;
+const intervalMilliseconds1 = intervalMinutes1 * 60 * 1000;
+const startInterval1 = () => {
+  console.log(`Starting interval order data every ${intervalMinutes1} minutes`);
+  setInterval(async () => {
+    console.log('Fetching and saving order data...');
+    await createOrdersFromCartsAuto();
+  }, intervalMilliseconds1);
+};
+startInterval1();
 
 exports.createOrderFromCart = async (req, res) => {
   try {
