@@ -304,7 +304,7 @@ const checkSubscriptionsAndAddToCart = async () => {
     const subscriptions = await userSubscription.find({
       $or: [
         { isSubscription: true },
-        { endDate: { $lt: currentDate } }
+        { endDate: { $gt: currentDate } }
       ]
     });
 
@@ -563,7 +563,7 @@ exports.getCart = async (req, res) => {
     console.error('Error fetching cart:', error);
     res.status(500).json({ status: 500, error: 'Internal server error' });
   }
-};850
+};
 
 exports.updateCartItemQuantity = async (req, res) => {
   try {
