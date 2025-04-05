@@ -385,7 +385,7 @@ const createOrdersFromCartsAuto = async () => {
 //   createOrdersFromCartsAuto();
 // });
 
-const intervalMinutes1 = 1;
+const intervalMinutes1 = 25;
 const intervalMilliseconds1 = intervalMinutes1 * 60 * 1000;
 const startInterval1 = () => {
   console.log(`Starting interval order data every ${intervalMinutes1} minutes`);
