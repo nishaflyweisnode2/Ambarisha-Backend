@@ -575,7 +575,7 @@ exports.getCart = async (req, res) => {
   }
 };
 
-exports.updateCartItemQuantity = async (req, res) => {
+exports.updateCartItemQuantity1 = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     const userId = req.user.id;
@@ -618,13 +618,81 @@ exports.updateCartItemQuantity = async (req, res) => {
 
     cart.deliveryCharge = deliveryCharge;
 
-    cart.totalAmount = subTotalAmount + taxAmount + deliveryCharge;
+    const packagingCharge = cart.packagingCharge || 0;
+
+    cart.totalAmount = subTotalAmount + taxAmount + deliveryCharge + packagingCharge;
     cart.totalAmount = isNaN(cart.totalAmount) || !isFinite(cart.totalAmount) ? 0 : cart.totalAmount;
 
     console.log('Total Amount:', cart.totalAmount);
 
     const walletAmount = user.wallet;
     if (walletAmount < cart.totalAmount) return res.status(400).json({ status: 400, message: "Insufficient funds in wallet" });
+
+    await cart.save();
+
+    return res.status(200).json({ status: 200, message: 'Cart quantity updated successfully', data: cart });
+
+  } catch (error) {
+    console.error('Error updating cart quantity:', error);
+    return res.status(500).json({ status: 500, error: 'Internal server error' });
+  }
+};
+exports.updateCartItemQuantity = async (req, res) => {
+  try {
+    const { productId, quantity } = req.body;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ status: 404, message: "User not found" });
+
+    const cart = await Cart.findOne({ userId });
+    if (!cart) return res.status(404).json({ status: 404, message: "Cart not found" });
+
+    const existingProduct = cart.products.find(item => item.productId.equals(productId));
+    if (!existingProduct) return res.status(404).json({ status: 404, message: "Product not found in the cart" });
+
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ status: 404, message: "Product not found" });
+
+    const price = product.discountActive ? product.discountPrice : product.originalPrice;
+
+    existingProduct.quantity = quantity;
+    existingProduct.price = price;
+
+    const subTotalAmount = cart.products.reduce((acc, curr) => acc + (curr.price || 0) * (curr.quantity || 0), 0);
+    cart.subtotal = subTotalAmount;
+    console.log('Subtotal:', subTotalAmount);
+
+    const taxRate = await Tax.findOne({});
+    if (!taxRate) {
+      return res.status(404).json({ status: 404, message: "Valid tax rate not found" });
+    }
+
+    const taxRateDecimal = taxRate.tax / 100;
+    let taxAmount = Math.round(subTotalAmount * taxRateDecimal);
+    cart.taxAmount = taxAmount;
+    console.log('Tax Amount:', taxAmount);
+
+    const cartMinimumPrices = await CartMinimumPrice.findOne({});
+    if (!cartMinimumPrices || typeof cartMinimumPrices.minimumPrice !== 'number') {
+      return res.status(404).json({ status: 404, message: "Cart minimum prices not found or invalid" });
+    }
+
+    const deliveryCharge = subTotalAmount <= cartMinimumPrices.minimumPrice ? (cartMinimumPrices.deliveryCharge || 0) : 0;
+    cart.deliveryCharge = deliveryCharge;
+    console.log('deliveryCharge:', deliveryCharge);
+
+    const packagingCharge = cart.packagingCharge || 0;
+    console.log('packagingCharge:', packagingCharge);
+
+    cart.totalAmount = subTotalAmount + taxAmount + deliveryCharge + packagingCharge;
+    cart.totalAmount = isNaN(cart.totalAmount) || !isFinite(cart.totalAmount) ? 0 : cart.totalAmount;
+    console.log('Total Amount:', cart.totalAmount);
+
+    const walletAmount = user.wallet || 0;
+    if (walletAmount < cart.totalAmount) {
+      return res.status(400).json({ status: 400, message: "Insufficient funds in wallet" });
+    }
 
     await cart.save();
 
