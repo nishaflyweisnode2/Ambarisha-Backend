@@ -798,16 +798,26 @@ exports.deleteMessageById = async (req, res) => {
 exports.createUserOrderIssue = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { issueId, orderId, products } = req.body;
+    const {
+      issueId,
+      orderId,
+      products,
+      recived,
+      poroductDemage,
+      quanityIssue,
+      otherIssues,
+      wrongItem,
+      message,
+    } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ status: 404, message: "User not found" });
     }
 
-    let fileUrl = "";
+    let imageUrl = "";
     if (req.file) {
-      fileUrl = req.file.path;
+      imageUrl = req.file.path;
     }
 
     const userOrderIssueData = {
@@ -815,20 +825,30 @@ exports.createUserOrderIssue = async (req, res) => {
       issueId,
       orderId,
       products,
+      recived,
+      poroductDemage,
+      quanityIssue,
+      otherIssues,
+      wrongItem,
+      message,
       ticketId: await reffralCode(),
     };
 
-    if (fileUrl) {
-      userOrderIssueData.image = fileUrl;
+    if (imageUrl) {
+      userOrderIssueData.image = imageUrl;
     }
 
     const userOrderIssue = new UserOrderIssue(userOrderIssueData);
     await userOrderIssue.save();
 
-    res.status(201).json({ message: 'User order issue created successfully', data: userOrderIssue });
+    return res.status(201).json({
+      status: 201,
+      message: "User order issue created successfully",
+      data: userOrderIssue,
+    });
   } catch (error) {
-    console.error('Error creating user order issue:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Error creating user order issue:", error);
+    return res.status(500).json({ status: 500, error: "Internal server error" });
   }
 };
 
